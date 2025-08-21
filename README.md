@@ -53,6 +53,14 @@ Microsoft auth in Mineflayer uses Device Code flow and does not require a passwo
 
 On first run, a device code prompt will appear in the console; follow the instructions to complete sign-in. Tokens are cached by Mineflayer’s auth provider.
 
+How the login works (first run):
+
+1. Start the bot. The console prints a Microsoft login URL and a short one-time code.
+2. Open the URL in your browser, enter the code, and approve access for the account that matches the email you stored.
+   - The browser may auto-select a signed-in Microsoft account; you can switch accounts if needed.
+3. Return to the bot process; it will continue automatically once the approval completes.
+4. Subsequent runs typically won’t prompt again because tokens are cached by the auth library.
+
 ---
 
 ### 4. Running
