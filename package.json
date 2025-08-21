@@ -1,0 +1,15 @@
+{
+  "name": "minecraft-camera-bot",
+  "version": "1.0.0",
+  "description": "A Mineflayer bot for cinematic camera work in Minecraft.",
+  "main": "cameraBot.js",
+  "scripts": {
+    "start": "node cameraBot.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "keytar": "^7.9.0",
+    "mineflayer": "^4.20.1",
+    "mineflayer-viewer": "^1.3.1"
+  }
+}
