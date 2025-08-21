@@ -1,4 +1,4 @@
-require('dotenv').config();
+// Keychain-only credentials: no environment variable fallbacks
 
 const mineflayer = require('mineflayer');
 const keytar = require('keytar');
@@ -13,18 +13,13 @@ const SERVER_PORT = 25565;
 // We wrap the main logic in an async function to use 'await'
 async function main() {
   try {
-    // Attempt to read the Microsoft account email from Keychain first,
-    // falling back to the BOT_EMAIL environment variable if not found.
-    let email = await keytar.getPassword(SERVICE_NAME, EMAIL_ACCOUNT_KEY);
-    if (!email && process.env.BOT_EMAIL) {
-      email = process.env.BOT_EMAIL;
-    }
+    // Read the Microsoft account email from the macOS Keychain.
+    const email = await keytar.getPassword(SERVICE_NAME, EMAIL_ACCOUNT_KEY);
 
     if (!email) {
       console.error(`Could not find bot email in Keychain under service '${SERVICE_NAME}' and account '${EMAIL_ACCOUNT_KEY}'.`);
-      console.error('Provide the email using macOS Keychain OR set the environment variable BOT_EMAIL.');
+      console.error('Please provide the email via macOS Keychain only.');
       console.error('Keychain: Item Name = MineflayerBot, Account Name = bot-email, Password = <bot email>');
-      console.error('Env var example: BOT_EMAIL="email@example.com" node cameraBot.js');
       return;
     }
 

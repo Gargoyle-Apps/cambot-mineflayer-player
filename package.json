@@ -7,7 +7,6 @@
     "start": "node cameraBot.js"
   },
   "dependencies": {
-    "dotenv": "^16.4.5",
     "keytar": "^7.9.0",
     "mineflayer": "^4.20.1",
     "prismarine-viewer": "^1.33.0"

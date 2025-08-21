@@ -23,19 +23,15 @@ npm install
 
 ---
 
-### 3. Credentials (macOS Keychain) and Microsoft Auth
+### 3. Credentials (macOS Keychain only) and Microsoft Auth
 
-Microsoft auth in Mineflayer uses Device Code flow and does not require a password in your code. Provide only the Microsoft account email used for Minecraft:
+Microsoft auth in Mineflayer uses Device Code flow and does not require a password in your code. Provide only the Microsoft account email used for Minecraft via macOS Keychain:
 
-Option A — macOS Keychain (recommended):
 - Open Keychain Access.
 - Create a new item:
   - Keychain Item Name: `MineflayerBot`
   - Account Name: `bot-email`
   - Password: your Microsoft account email (e.g., `you@example.com`).
-
-Option B — Environment variable:
-- Run with `BOT_EMAIL="you@example.com" node cameraBot.js`.
 
 On first run, a device code prompt will appear in the console; follow the instructions to complete sign-in. Tokens are cached by Mineflayer’s auth provider.
 
