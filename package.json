@@ -4,7 +4,9 @@
   "description": "A Mineflayer bot for cinematic camera work in Minecraft.",
   "main": "cameraBot.js",
   "scripts": {
-    "start": "node cameraBot.js"
+    "start": "node cameraBot.js",
+    "setup:macos": "bash scripts/setup-macos.sh",
+    "verify": "bash scripts/verify.sh"
   },
   "dependencies": {
     "keytar": "^7.9.0",
