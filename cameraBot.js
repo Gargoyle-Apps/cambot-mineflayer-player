@@ -45,12 +45,12 @@ async function main() {
       cameraManager.start(bot);
     });
 
-    // Chat command handler for cam controls
+    // Chat command handler for cambot controls
     bot.on('chat', (username, message) => {
       if (username === bot.username) return;
       const args = message.split(' ');
       const command = (args[0] || '').toLowerCase();
-      if (command !== 'cam') return;
+      if (command !== 'cambot') return;
 
       const key = args[1];
       let value = args[2];

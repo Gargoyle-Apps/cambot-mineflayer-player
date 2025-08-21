@@ -48,6 +48,8 @@ node cameraBot.js
 
 Then open `http://<your-server-ip>:3007` in your browser to view the bot.
 
+Assumes the Minecraft server is reachable at `localhost:25565`.
+
 ---
 
 ### 5. Dependencies & Resources
@@ -68,15 +70,26 @@ Then open `http://<your-server-ip>:3007` in your browser to view the bot.
 
 ### 7. Camera control via chat commands
 
-Usage: `cam <setting> <value>`
+Usage: `cambot <setting> <value>`
 
-- **entitySearchRadius**: number (blocks). Example: `cam entitySearchRadius 150`
-- **includeHostileMobs**: `true|false`. Example: `cam includeHostileMobs false`
-- **targetMix**: `players_only|entities_only|balanced|player_focused`. Example: `cam targetMix player_focused`
-- **viewModeMix**: `random|look_at|ots|circle|wide`. Example: `cam viewModeMix circle`
-- **circleSpeed**: number. Example: `cam circleSpeed 0.2`
-- **overShoulderDistance**: number. Example: `cam overShoulderDistance 7`
-- **switchInterval**: minutes (number). Example: `cam switchInterval 10`
+- **entitySearchRadius**: number (blocks). Example: `cambot entitySearchRadius 150`
+- **includeHostileMobs**: `true|false`. Example: `cambot includeHostileMobs false`
+- **targetMix**: `players_only|entities_only|balanced|player_focused`. Example: `cambot targetMix player_focused`
+- **viewModeMix**: `random|look_at|ots|circle|wide`. Example: `cambot viewModeMix circle`
+- **circleSpeed**: number. Example: `cambot circleSpeed 0.2`
+- **overShoulderDistance**: number. Example: `cambot overShoulderDistance 7`
+- **switchInterval**: minutes (number). Example: `cambot switchInterval 10`
+
+Defaults:
+
+- `defaultGamemode`: `spectator`
+- `entitySearchRadius`: `120`
+- `includeHostileMobs`: `false`
+- `targetMix`: `players_only`
+- `viewModeMix`: `look_at`
+- `circleSpeed`: `0.15`
+- `overShoulderDistance`: `6`
+- `switchInterval`: `5` minutes
 
 ---
 
@@ -95,11 +108,4 @@ Checks:
 
 ---
 
-### 9. Docker?
-
-Running the bot in Docker on macOS is possible, but offers limited benefit here because:
-
-- The bot relies on macOS Keychain via Keytar for credentials, which is not directly accessible inside a Linux-based container.
-- You would have to switch to a different credential mechanism (not recommended for this project’s security posture).
-
-If your Mac mini already runs the Minecraft server in Docker, it’s fine to run the bot on the host macOS instead. This keeps Keychain integration and simplifies networking (connect to `localhost:25565` or LAN IP).
+<!-- Docker context intentionally removed; project assumes local server access. -->
