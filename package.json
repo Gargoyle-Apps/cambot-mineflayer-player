@@ -11,6 +11,7 @@
     "test": "node runTests.js"
   },
   "dependencies": {
+    "canvas": "^2.11.2",
     "keytar": "^7.9.0",
     "mineflayer": "^4.20.1",
     "mineflayer-pathfinder": "^2.4.4",

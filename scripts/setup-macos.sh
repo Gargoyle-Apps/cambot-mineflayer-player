@@ -52,6 +52,22 @@ else
   exit 1
 fi
 
+echo "==> Installing native libraries for canvas (prismarine-viewer)"
+if command -v brew >/dev/null 2>&1; then
+  brew list pkg-config >/dev/null 2>&1 || brew install pkg-config
+  brew list cairo >/dev/null 2>&1 || brew install cairo
+  brew list pango >/dev/null 2>&1 || brew install pango
+  brew list libpng >/dev/null 2>&1 || brew install libpng
+  brew list jpeg >/dev/null 2>&1 || brew install jpeg
+  brew list giflib >/dev/null 2>&1 || brew install giflib
+  brew list librsvg >/dev/null 2>&1 || brew install librsvg
+else
+  echo "Homebrew not found. Install from https://brew.sh/ or install these packages manually: pkg-config, cairo, pango, libpng, jpeg, giflib, librsvg" >&2
+fi
+
+echo "==> Ensuring canvas npm package is installed"
+npm ls canvas >/dev/null 2>&1 || npm install canvas
+
 SERVICE_NAME="MineflayerBot"
 ACCOUNT_NAME="bot-email"
 

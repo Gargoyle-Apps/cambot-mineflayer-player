@@ -83,6 +83,11 @@ Assumes the Minecraft server is reachable at `localhost:25565`.
 - Keep the server and bot on the same LAN for lower latency.
 - Expose port `3007` on the client if viewing from other devices (not recommended)
 
+Viewer prerequisites (handled by setup):
+
+- On macOS, `scripts/setup-macos.sh` installs native libraries and the `canvas` package used by Prismarine Viewer.
+- If you skip the setup script, install via Homebrew: `brew install pkg-config cairo pango libpng jpeg giflib librsvg`, then `npm install canvas`.
+
 ---
 
 ### 7. Camera control via chat commands
