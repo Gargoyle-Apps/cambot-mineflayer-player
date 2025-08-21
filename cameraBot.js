@@ -54,7 +54,16 @@ async function main() {
 
       const key = args[1];
       let value = args[2];
-      if (typeof key === 'undefined') return;
+
+      // Help output
+      if (typeof key === 'undefined' || key === 'help') {
+        bot.chat("cambot usage: cambot <setting> <value>");
+        bot.chat("settings: entitySearchRadius, includeHostileMobs, targetMix, viewModeMix, circleSpeed, circleRadius, overShoulderDistance, switchInterval (minutes)");
+        const cfg = cameraManager.config;
+        bot.chat(`current: radius=${cfg.entitySearchRadius}, hostile=${cfg.includeHostileMobs}, mix=${cfg.targetMix}, mode=${cfg.viewModeMix}`);
+        bot.chat(`current: circleSpeed=${cfg.circleSpeed}, circleRadius=${cfg.circleRadius}, overShoulder=${cfg.overShoulderDistance}, switchInterval=${Math.round(cfg.switchInterval/60000)}m`);
+        return;
+      }
 
       if (value === 'true') value = true;
       else if (value === 'false') value = false;

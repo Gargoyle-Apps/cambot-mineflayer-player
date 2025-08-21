@@ -89,14 +89,14 @@ Assumes the Minecraft server is reachable at `localhost:25565`.
 
 Usage: `cambot <setting> <value>`
 
-- **entitySearchRadius**: number (blocks). Example: `cambot entitySearchRadius 150`
+- **entitySearchRadius**: number (blocks). Example: `cambot entitySearchRadius 120`
 - **includeHostileMobs**: `true|false`. Example: `cambot includeHostileMobs false`
 - **targetMix**: `players_only|entities_only|balanced|player_focused`. Example: `cambot targetMix player_focused`
 - **viewModeMix**: `random|look_at|ots|circle|wide`. Example: `cambot viewModeMix circle`
-- **circleSpeed**: number. Example: `cambot circleSpeed 0.2`
-- **circleRadius**: number (blocks). Example: `cambot circleRadius 10`
-- **overShoulderDistance**: number. Example: `cambot overShoulderDistance 7`
-- **switchInterval**: minutes (number). Example: `cambot switchInterval 10`
+- **circleSpeed**: number. Example: `cambot circleSpeed 0.15`
+- **circleRadius**: number (blocks). Example: `cambot circleRadius 8`
+- **overShoulderDistance**: number. Example: `cambot overShoulderDistance 6`
+- **switchInterval**: minutes (number). Example: `cambot switchInterval 5`
 
 Defaults:
 
