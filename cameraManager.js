@@ -15,6 +15,7 @@ const config = {
   // View modes
   viewModeMix: 'look_at', // random | look_at | ots | circle | wide
   circleSpeed: 0.15, // radians per tick step
+  circleRadius: 8, // blocks; used in circle mode
   overShoulderDistance: 6,
 
   // Timing
@@ -27,6 +28,7 @@ let currentTarget = null;
 let movementInterval = null;
 let switchIntervalHandle = null;
 let circleAngle = 0;
+let lastGoalPos = null; // For jitter avoidance
 
 function start(bot) {
   if (botRef) stop();
@@ -178,7 +180,7 @@ function performModeMovement(mode) {
     }
     case 'circle': {
       circleAngle += config.circleSpeed;
-      const radius = Math.max(5, Math.min(16, distance));
+      const radius = Math.max(2, config.circleRadius);
       const x = target.position.x + Math.cos(circleAngle) * radius;
       const z = target.position.z + Math.sin(circleAngle) * radius;
       const y = target.position.y + target.height * 0.6;
@@ -197,7 +199,12 @@ function performModeMovement(mode) {
   }
 
   if (goalPos) {
-    bot.pathfinder.setGoal(new goals.GoalNear(goalPos.x, goalPos.y, goalPos.z, 1));
+    // Jitter avoidance: only update pathfinder goal if moved significantly
+    const shouldUpdate = !lastGoalPos || goalPos.distanceTo(lastGoalPos) > 0.5;
+    if (shouldUpdate) {
+      bot.pathfinder.setGoal(new goals.GoalNear(goalPos.x, goalPos.y, goalPos.z, 1));
+      lastGoalPos = goalPos.clone();
+    }
   }
 }
 

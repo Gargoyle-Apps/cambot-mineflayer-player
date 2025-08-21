@@ -61,6 +61,9 @@ async function main() {
       else if (value && !isNaN(parseFloat(value))) {
         if (key === 'switchInterval') value = parseFloat(value) * 60 * 1000;
         else value = parseFloat(value);
+      } else if (['entitySearchRadius', 'circleSpeed', 'overShoulderDistance', 'switchInterval', 'circleRadius'].includes(key)) {
+        bot.chat(`Invalid number value for ${key}.`);
+        return;
       }
 
       if (cameraManager.updateConfig(key, value)) bot.chat(`Camera setting '${key}' updated.`);
