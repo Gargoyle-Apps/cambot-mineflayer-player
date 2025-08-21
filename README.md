@@ -28,6 +28,7 @@ npm run verify
 Notes:
 - The `git clone` command creates a folder named after the repo (`mineflayer_camerabot`) in your current directory. You can change the folder name by appending it to the clone command: `git clone <url> my-folder`.
 - `npm run setup:macos` installs project dependencies locally into this folder.
+- The `-- --email "you@example.com"` passes an argument through npm to the setup script. It provides your Microsoft account email, which the script stores in macOS Keychain under service `MineflayerBot` and account `bot-email`. If omitted, the script will prompt you to enter it interactively.
 
 ---
 
