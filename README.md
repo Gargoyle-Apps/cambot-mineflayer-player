@@ -66,7 +66,36 @@ Then open `http://<your-server-ip>:3007` in your browser to view the bot.
 
 ---
 
-### 7. Docker?
+### 7. Camera control via chat commands
+
+Usage: `cam <setting> <value>`
+
+- **entitySearchRadius**: number (blocks). Example: `cam entitySearchRadius 150`
+- **includeHostileMobs**: `true|false`. Example: `cam includeHostileMobs false`
+- **targetMix**: `players_only|entities_only|balanced|player_focused`. Example: `cam targetMix player_focused`
+- **viewModeMix**: `random|look_at|ots|circle|wide`. Example: `cam viewModeMix circle`
+- **circleSpeed**: number. Example: `cam circleSpeed 0.2`
+- **overShoulderDistance**: number. Example: `cam overShoulderDistance 7`
+- **switchInterval**: minutes (number). Example: `cam switchInterval 10`
+
+---
+
+### 8. Automated tests
+
+Run a simple integration smoke test:
+
+```bash
+node runTests.js
+```
+
+Checks:
+- Connection and spawn
+- Spectator mode
+- Player discovery
+
+---
+
+### 9. Docker?
 
 Running the bot in Docker on macOS is possible, but offers limited benefit here because:
 

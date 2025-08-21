@@ -3,6 +3,7 @@
 const mineflayer = require('mineflayer');
 const keytar = require('keytar');
 const { startViewer } = require('./viewer');
+const cameraManager = require('./cameraManager');
 
 // --- Configuration ---
 const SERVICE_NAME = 'MineflayerBot'; // Must match the Keychain Item Name
@@ -37,6 +38,33 @@ async function main() {
       console.log(`Bot '${bot.username}' has successfully spawned.`);
       console.log('Bot is now online and ready.');
       startViewer(bot);
+
+      // Set gamemode and start camera manager
+      const gamemode = cameraManager.config.defaultGamemode;
+      bot.chat(`/gamemode ${gamemode}`);
+      cameraManager.start(bot);
+    });
+
+    // Chat command handler for cam controls
+    bot.on('chat', (username, message) => {
+      if (username === bot.username) return;
+      const args = message.split(' ');
+      const command = (args[0] || '').toLowerCase();
+      if (command !== 'cam') return;
+
+      const key = args[1];
+      let value = args[2];
+      if (typeof key === 'undefined') return;
+
+      if (value === 'true') value = true;
+      else if (value === 'false') value = false;
+      else if (value && !isNaN(parseFloat(value))) {
+        if (key === 'switchInterval') value = parseFloat(value) * 60 * 1000;
+        else value = parseFloat(value);
+      }
+
+      if (cameraManager.updateConfig(key, value)) bot.chat(`Camera setting '${key}' updated.`);
+      else bot.chat(`Unknown setting: '${key}'.`);
     });
 
     bot.on('kicked', console.log);
