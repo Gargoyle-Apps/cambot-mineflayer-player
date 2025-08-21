@@ -75,11 +75,11 @@ Assumes the Minecraft server is reachable at `localhost:25565`.
 
 ---
 
-### 6. Mac mini notes
+### 6. Client machine notes
 
 - Ensure Node 18+ is installed (e.g., via `nvm` or installer).
 - Keep the server and bot on the same LAN for lower latency.
-- Expose port `3007` on the Mac mini if viewing from other devices.
+- Expose port `3007` on the client if viewing from other devices (not recommended)
 
 ---
 
