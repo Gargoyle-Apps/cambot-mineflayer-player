@@ -139,10 +139,6 @@ This pulls latest changes, reinstalls exact dependencies, and re-runs environmen
 
 ---
 
-<!-- Docker context intentionally removed; project assumes local server access. -->
-
----
-
 ### 10. Dependencies & Resources
 
 - **[Mineflayer](https://github.com/PrismarineJS/mineflayer)** — core bot library
