@@ -18,8 +18,8 @@ Install on any modern macOS machine (including a Mac mini server):
 Clone and setup (macOS):
 
 ```bash
-git clone https://github.com/ImpureCrumpet/mineflayer_cameraperson.git
-cd mineflayer_cameraperson
+git clone https://github.com/ImpureCrumpet/mineflayer_camerabot.git
+cd mineflayer_camerabot
 npm run setup:macos -- --email "you@example.com"
 npm run verify
 ```
