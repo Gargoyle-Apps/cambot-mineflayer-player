@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "A Mineflayer bot for cinematic camera work in Minecraft.",
   "main": "cameraBot.js",
+  "engines": {
+    "node": ">=18 <24 || ^20"
+  },
   "scripts": {
     "start": "node cameraBot.js",
     "setup:macos": "bash scripts/setup-macos.sh",
@@ -16,5 +19,9 @@
     "mineflayer": "^4.20.1",
     "mineflayer-pathfinder": "^2.4.4",
     "prismarine-viewer": "^1.33.0"
+  },
+  "overrides": {
+    "axios": "^1.6.8",
+    "@xboxreplay/xboxlive-auth": "^5.0.2"
   }
 }
