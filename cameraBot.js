@@ -1,4 +1,4 @@
-// No more require('dotenv').config();
+require('dotenv').config();
 
 const mineflayer = require('mineflayer');
 const keytar = require('keytar');
@@ -6,33 +6,34 @@ const { startViewer } = require('./viewer');
 
 // --- Configuration ---
 const SERVICE_NAME = 'MineflayerBot'; // Must match the Keychain Item Name
-const EMAIL_ACCOUNT_KEY = 'bot-email';       // The key for the email item
-const PASSWORD_ACCOUNT_KEY = 'bot-password'; // The key for the password item
+const EMAIL_ACCOUNT_KEY = 'bot-email'; // The key for the email item
 const SERVER_IP = 'localhost';
 const SERVER_PORT = 25565;
 
 // We wrap the main logic in an async function to use 'await'
 async function main() {
   try {
-    // Fetch both email and password from the Keychain concurrently
-    const [email, password] = await Promise.all([
-      keytar.getPassword(SERVICE_NAME, EMAIL_ACCOUNT_KEY),
-      keytar.getPassword(SERVICE_NAME, PASSWORD_ACCOUNT_KEY)
-    ]);
+    // Attempt to read the Microsoft account email from Keychain first,
+    // falling back to the BOT_EMAIL environment variable if not found.
+    let email = await keytar.getPassword(SERVICE_NAME, EMAIL_ACCOUNT_KEY);
+    if (!email && process.env.BOT_EMAIL) {
+      email = process.env.BOT_EMAIL;
+    }
 
-    if (!email || !password) {
-      console.error(`Could not find email or password in Keychain under the service name '${SERVICE_NAME}'.`);
-      console.error('Please ensure you have stored both correctly in the Keychain Access app.');
+    if (!email) {
+      console.error(`Could not find bot email in Keychain under service '${SERVICE_NAME}' and account '${EMAIL_ACCOUNT_KEY}'.`);
+      console.error('Provide the email using macOS Keychain OR set the environment variable BOT_EMAIL.');
+      console.error('Keychain: Item Name = MineflayerBot, Account Name = bot-email, Password = <bot email>');
+      console.error('Env var example: BOT_EMAIL="email@example.com" node cameraBot.js');
       return;
     }
 
-    console.log('Successfully retrieved credentials from Keychain. Attempting to connect...');
+    console.log('Email resolved. Starting Microsoft device code authentication on first run if needed...');
 
     const bot = mineflayer.createBot({
       host: SERVER_IP,
       port: SERVER_PORT,
-      username: email,    // Use the email we fetched
-      password: password, // Use the password we fetched
+      username: email,
       auth: 'microsoft'
     });
 
