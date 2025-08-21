@@ -15,10 +15,13 @@ Install on any modern macOS machine (including a Mac mini server):
 
 ### 2. Installation
 
+Clone and setup (macOS):
+
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/ImpureCrumpet/mineflayer_cameraperson.git
 cd mineflayer_cameraperson
-npm install
+npm run setup:macos -- --email "you@example.com"
+npm run verify
 ```
 
 ---
@@ -60,3 +63,14 @@ Then open `http://<your-server-ip>:3007` in your browser to view the bot.
 - Ensure Node 18+ is installed (e.g., via `nvm` or installer).
 - Keep the server and bot on the same LAN for lower latency.
 - Expose port `3007` on the Mac mini if viewing from other devices.
+
+---
+
+### 7. Docker?
+
+Running the bot in Docker on macOS is possible, but offers limited benefit here because:
+
+- The bot relies on macOS Keychain via Keytar for credentials, which is not directly accessible inside a Linux-based container.
+- You would have to switch to a different credential mechanism (not recommended for this project’s security posture).
+
+If your Mac mini already runs the Minecraft server in Docker, it’s fine to run the bot on the host macOS instead. This keeps Keychain integration and simplifies networking (connect to `localhost:25565` or LAN IP).
