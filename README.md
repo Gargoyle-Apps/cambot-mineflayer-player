@@ -10,6 +10,7 @@ Install on any modern macOS machine (including a Mac mini server):
 
 - **Node.js**: 18.x or newer. Download from [nodejs.org](https://nodejs.org/).
 - **npm**: Comes with Node.js.
+- **Git**: Required for cloning the repository. Install via [git-scm.com](https://git-scm.com/download/mac) or Xcode Command Line Tools: `xcode-select --install`.
 
 ---
 
@@ -23,6 +24,19 @@ cd mineflayer_camerabot
 npm run setup:macos -- --email "you@example.com"
 npm run verify
 ```
+
+Notes:
+- The `git clone` command creates a folder named after the repo (`mineflayer_camerabot`) in your current directory. You can change the folder name by appending it to the clone command: `git clone <url> my-folder`.
+- `npm run setup:macos` installs project dependencies locally into this folder.
+
+---
+
+### 2.1 Where files are stored on your Mac
+
+- Project files: wherever you run `git clone` (for example `~/Projects/mineflayer_camerabot`).
+- Dependencies: installed into the project’s local `node_modules` directory (no global installs required).
+- Credentials: stored in the macOS Keychain (not in your project folder). The bot reads the item `MineflayerBot` / `bot-email` via Keytar.
+- Nothing else is written outside your project directory or Keychain.
 
 ---
 
