@@ -75,13 +75,7 @@ Assumes the Minecraft server is reachable at `localhost:25565`.
 
 ---
 
-### 5. Dependencies & Resources
 
-- **[Mineflayer](https://github.com/PrismarineJS/mineflayer)** — core bot library
-- **[Prismarine Viewer](https://github.com/PrismarineJS/prismarine-viewer)** — browser viewer
-- **[Keytar](https://github.com/atom/node-keytar)** — macOS Keychain access
-
----
 
 ### 6. Client machine notes
 
@@ -144,3 +138,12 @@ This pulls latest changes, reinstalls exact dependencies, and re-runs environmen
 ---
 
 <!-- Docker context intentionally removed; project assumes local server access. -->
+
+---
+
+### 10. Dependencies & Resources
+
+- **[Mineflayer](https://github.com/PrismarineJS/mineflayer)** — core bot library
+- **[mineflayer-pathfinder](https://github.com/PrismarineJS/mineflayer-pathfinder)** — pathfinding and movement goals
+- **[Prismarine Viewer](https://github.com/PrismarineJS/prismarine-viewer)** — browser viewer
+- **[Keytar](https://github.com/atom/node-keytar)** — macOS Keychain access
