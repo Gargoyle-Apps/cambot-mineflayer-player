@@ -143,6 +143,8 @@ npm run update
 
 This pulls latest changes, reinstalls exact dependencies, and re-runs environment checks.
 
+Security note: The project enforces patched transitive dependencies via npm overrides (axios and @xboxreplay/xboxlive-auth). Pulling latest and reinstalling is sufficient; no manual pinning required.
+
 ---
 
 ### 10. Dependencies & Resources
