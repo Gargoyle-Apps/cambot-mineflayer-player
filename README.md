@@ -123,4 +123,34 @@ Checks:
 
 ---
 
+### 9. Updating
+
+Safely update to the latest version:
+
+```bash
+npm run update
+```
+
+This pulls latest changes, reinstalls exact dependencies, and re-runs environment checks.
+
+---
+
+### 10. Breaking changes and test guidance
+
+Potential breaking areas:
+
+- Auth flow: `auth: 'microsoft'` and Keychain lookup (`MineflayerBot` / `bot-email`) in `cameraBot.js`.
+- Chat contract: chat command keyword (`cambot`) and supported keys in `cameraManager.js` config.
+
+Guard with tests:
+
+```bash
+npm test
+```
+
+Extend `runTests.js` to assert:
+- Successful login and spawn
+- Spectator mode (or your required mode)
+- Sending a `cambot` command updates config (e.g., bot echoes confirmation or state reflects change)
+
 <!-- Docker context intentionally removed; project assumes local server access. -->

@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node cameraBot.js",
     "setup:macos": "bash scripts/setup-macos.sh",
-    "verify": "bash scripts/verify.sh"
+    "verify": "bash scripts/verify.sh",
+    "update": "git pull --ff-only && npm ci && npm run verify",
+    "test": "node runTests.js"
   },
   "dependencies": {
     "keytar": "^7.9.0",
