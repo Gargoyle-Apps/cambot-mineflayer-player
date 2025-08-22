@@ -17,10 +17,11 @@ if [[ "$NODE20_CHOICE" =~ ^[Yy]$ ]]; then
   echo "Using Node 20 LTS for this project (will create .nvmrc)."
   echo "20" > .nvmrc
   # Try to activate Node 20 if nvm or volta are available
-  if [ -s "$HOME/.nvm/nvm.sh" ]; then
-    # shellcheck source=/dev/null
-    . "$HOME/.nvm/nvm.sh"
-  fi
+  # Try common nvm locations and source
+  if [ -s "$HOME/.nvm/nvm.sh" ]; then . "$HOME/.nvm/nvm.sh"; fi
+  if [ -s "/opt/homebrew/opt/nvm/nvm.sh" ]; then . "/opt/homebrew/opt/nvm/nvm.sh"; fi
+  if [ -s "/usr/local/opt/nvm/nvm.sh" ]; then . "/usr/local/opt/nvm/nvm.sh"; fi
+
   if command -v nvm >/dev/null 2>&1; then
     nvm install 20 >/dev/null
     nvm use 20 >/dev/null || true
@@ -28,6 +29,18 @@ if [[ "$NODE20_CHOICE" =~ ^[Yy]$ ]]; then
     volta pin node@20 || true
   else
     echo "nvm/volta not found. Proceeding with your current Node. You can still run 'nvm use 20' later."
+  fi
+
+  # Ensure future shells auto-load nvm (zsh)
+  ZSHRC="$HOME/.zshrc"
+  if ! grep -q 'NVM_DIR' "$ZSHRC" 2>/dev/null; then
+    {
+      echo 'export NVM_DIR="$HOME/.nvm"'
+      echo '[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"'
+      echo '[ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && . "/opt/homebrew/opt/nvm/nvm.sh"'
+      echo '[ -s "/usr/local/opt/nvm/nvm.sh" ] && . "/usr/local/opt/nvm/nvm.sh"'
+    } >> "$ZSHRC"
+    echo "Appended nvm init lines to ~/.zshrc (open a new terminal or 'source ~/.zshrc')."
   fi
 else
   echo "Staying on current Node (24+). We'll check for Xcode Command Line Tools for native builds."
