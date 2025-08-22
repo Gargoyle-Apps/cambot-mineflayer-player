@@ -170,3 +170,8 @@ Security note: The project enforces patched transitive dependencies via npm over
 - **[mineflayer-pathfinder](https://github.com/PrismarineJS/mineflayer-pathfinder)** — pathfinding and movement goals
 - **[Prismarine Viewer](https://github.com/PrismarineJS/prismarine-viewer)** — browser viewer
 - **[Keytar](https://github.com/atom/node-keytar)** — macOS Keychain access
+
+Optional (server-side, Fabric) for version bridging:
+
+- **ViaFabric (Fabric mod)** — allows newer/older clients to connect to your Fabric server. Install the jar in your server `mods/` folder.
+- **ViaBackwards (plugin/mod)** — enables older clients (e.g., 1.21) to join newer servers (e.g., 1.21.7). Install alongside ViaFabric.
