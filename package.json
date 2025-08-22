@@ -11,7 +11,8 @@
     "setup:macos": "bash scripts/setup-macos.sh",
     "verify": "bash scripts/verify.sh",
     "update": "git pull --ff-only && npm ci && npm run verify",
-    "test": "node runTests.js"
+    "test": "node runTests.js",
+    "auth:prompt": "node scripts/auth-prompt.js"
   },
   "dependencies": {
     "canvas": "^2.11.2",
