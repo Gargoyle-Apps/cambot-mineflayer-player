@@ -30,7 +30,8 @@ async function main() {
       host: SERVER_IP,
       port: SERVER_PORT,
       username: email,
-      auth: 'microsoft'
+      auth: 'microsoft',
+      version: '1.21.7'
     });
 
     // --- Bot Event Handlers ---
