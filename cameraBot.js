@@ -4,12 +4,15 @@ const mineflayer = require('mineflayer');
 const keytar = require('keytar');
 const { startViewer } = require('./viewer');
 const cameraManager = require('./cameraManager');
+const path = require('path');
+const fs = require('fs');
 
 // --- Configuration ---
 const SERVICE_NAME = 'MineflayerBot'; // Must match the Keychain Item Name
 const EMAIL_ACCOUNT_KEY = 'bot-email'; // The key for the email item
 const SERVER_IP = 'localhost';
 const SERVER_PORT = 25565;
+const PROFILES_DIR = path.join(__dirname, '.mcprofile'); // isolated auth cache
 
 // We wrap the main logic in an async function to use 'await'
 async function main() {
@@ -31,7 +34,8 @@ async function main() {
       port: SERVER_PORT,
       username: email,
       auth: 'microsoft',
-      version: '1.21.7'
+      version: '1.21.7',
+      profilesFolder: PROFILES_DIR
     });
 
     // --- Bot Event Handlers ---
@@ -63,6 +67,19 @@ async function main() {
         const cfg = cameraManager.config;
         bot.chat(`current: radius=${cfg.entitySearchRadius}, hostile=${cfg.includeHostileMobs}, mix=${cfg.targetMix}, mode=${cfg.viewModeMix}`);
         bot.chat(`current: circleSpeed=${cfg.circleSpeed}, circleRadius=${cfg.circleRadius}, overShoulder=${cfg.overShoulderDistance}, switchInterval=${Math.round(cfg.switchInterval/60000)}m`);
+        return;
+      }
+
+      // Reauth command: clear isolated auth/cache and exit for fresh device-code login on next start
+      if (key === 'reauth') {
+        try {
+          fs.rmSync(PROFILES_DIR, { recursive: true, force: true });
+          bot.chat('Auth cache cleared. Restarting bot to trigger re-auth...');
+        } catch (e) {
+          bot.chat('Failed to clear auth cache, check logs.');
+          console.error('Failed to remove profiles dir:', e);
+        }
+        setTimeout(() => process.exit(0), 300);
         return;
       }
 
