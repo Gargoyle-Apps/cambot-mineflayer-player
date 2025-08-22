@@ -62,6 +62,10 @@ How the login works (first run):
 3. Return to the bot process; it will continue automatically once the approval completes.
 4. Subsequent runs typically won’t prompt again because tokens are cached by the auth library.
 
+Important:
+- Before setting up the bot, sign into the official Minecraft Launcher with the Microsoft account that owns Java Edition and launch Java once. This ensures your Java profile is created.
+- The bot uses the launcher’s auth cache (profiles folder) by default, so it will share the same login.
+
 ---
 
 ### 4. Running
@@ -103,6 +107,10 @@ Usage: `cambot <setting> <value>`
 - **circleRadius**: number (blocks). Example: `cambot circleRadius 8`
 - **overShoulderDistance**: number. Example: `cambot overShoulderDistance 6`
 - **switchInterval**: minutes (number). Example: `cambot switchInterval 5`
+
+Auth/reauth commands:
+
+- `cambot reauth`: Clears the launcher auth cache file (`prismarine_auth.json`) and exits. Run the bot again to trigger a fresh Microsoft device-code login.
 
 Defaults:
 

@@ -12,7 +12,16 @@ const SERVICE_NAME = 'MineflayerBot'; // Must match the Keychain Item Name
 const EMAIL_ACCOUNT_KEY = 'bot-email'; // The key for the email item
 const SERVER_IP = 'localhost';
 const SERVER_PORT = 25565;
-const PROFILES_DIR = path.join(__dirname, '.mcprofile'); // isolated auth cache
+// Use the official launcher profiles folder so the bot shares the same auth
+const PROFILES_DIR = (function () {
+  if (process.platform === 'darwin') {
+    return path.join(process.env.HOME || '', 'Library', 'Application Support', 'minecraft');
+  }
+  if (process.platform === 'win32') {
+    return path.join(process.env.APPDATA || '', '.minecraft');
+  }
+  return path.join(process.env.HOME || process.env.USERPROFILE || '.', '.minecraft');
+})();
 
 // We wrap the main logic in an async function to use 'await'
 async function main() {
@@ -34,7 +43,9 @@ async function main() {
       port: SERVER_PORT,
       username: email,
       auth: 'microsoft',
-      version: '1.21.7',
+      // Default to 1.21 so servers with ViaBackwards can accept the client.
+      // If your server is strictly 1.21.7 without ViaBackwards, change to '1.21.7'.
+      version: '1.21',
       profilesFolder: PROFILES_DIR
     });
 
@@ -70,11 +81,13 @@ async function main() {
         return;
       }
 
-      // Reauth command: clear isolated auth/cache and exit for fresh device-code login on next start
+      // Reauth command: clear launcher auth cache file and exit for fresh device-code login on next start
       if (key === 'reauth') {
         try {
-          fs.rmSync(PROFILES_DIR, { recursive: true, force: true });
-          bot.chat('Auth cache cleared. Restarting bot to trigger re-auth...');
+          const cacheFile = path.join(PROFILES_DIR, 'prismarine_auth.json');
+          const existed = fs.existsSync(cacheFile);
+          fs.rmSync(cacheFile, { force: true });
+          bot.chat(existed ? 'Auth cache removed. Restarting to trigger re-auth...' : 'No auth cache found. Restarting to trigger new login...');
         } catch (e) {
           bot.chat('Failed to clear auth cache, check logs.');
           console.error('Failed to remove profiles dir:', e);
