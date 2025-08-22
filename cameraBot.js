@@ -31,7 +31,6 @@ async function main() {
       port: SERVER_PORT,
       username: email,
       auth: 'microsoft',
-      version: '1.21.7',
       protocolVersion: 772
     });
 
