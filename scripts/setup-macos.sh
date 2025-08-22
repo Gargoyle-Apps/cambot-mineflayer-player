@@ -10,25 +10,25 @@ fi
 
 # Ask which Node to use for this project
 echo "==> Node.js version for this project"
-read -r -p "Use Node 20 LTS for this project? [Y/n]: " NODE20_CHOICE
-NODE20_CHOICE=${NODE20_CHOICE:-Y}
+read -r -p "Use Node 22 LTS for this project? [Y/n]: " NODE22_CHOICE
+NODE22_CHOICE=${NODE22_CHOICE:-Y}
 
-if [[ "$NODE20_CHOICE" =~ ^[Yy]$ ]]; then
-  echo "Using Node 20 LTS for this project (will create .nvmrc)."
-  echo "20" > .nvmrc
-  # Try to activate Node 20 if nvm or volta are available
+if [[ "$NODE22_CHOICE" =~ ^[Yy]$ ]]; then
+  echo "Using Node 22 LTS for this project (will create .nvmrc)."
+  echo "22" > .nvmrc
+  # Try to activate Node 22 if nvm or volta are available
   # Try common nvm locations and source
   if [ -s "$HOME/.nvm/nvm.sh" ]; then . "$HOME/.nvm/nvm.sh"; fi
   if [ -s "/opt/homebrew/opt/nvm/nvm.sh" ]; then . "/opt/homebrew/opt/nvm/nvm.sh"; fi
   if [ -s "/usr/local/opt/nvm/nvm.sh" ]; then . "/usr/local/opt/nvm/nvm.sh"; fi
 
   if command -v nvm >/dev/null 2>&1; then
-    nvm install 20 >/dev/null
-    nvm use 20 >/dev/null || true
+    nvm install 22 >/dev/null
+    nvm use 22 >/dev/null || true
   elif command -v volta >/dev/null 2>&1; then
-    volta pin node@20 || true
+    volta pin node@22 || true
   else
-    echo "nvm/volta not found. Proceeding with your current Node. You can still run 'nvm use 20' later."
+    echo "nvm/volta not found. Proceeding with your current Node. You can still run 'nvm use 22' later."
   fi
 
   # Ensure future shells auto-load nvm (zsh)

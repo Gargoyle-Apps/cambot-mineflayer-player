@@ -4,7 +4,7 @@
   "description": "A Mineflayer bot for cinematic camera work in Minecraft.",
   "main": "cameraBot.js",
   "engines": {
-    "node": ">=18 <24 || ^20"
+    "node": ">=22"
   },
   "scripts": {
     "start": "node cameraBot.js",

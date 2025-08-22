@@ -8,8 +8,8 @@ This project uses Mineflayer to create an automated "camera" bot in Minecraft. I
 
 Install on any modern macOS machine (including a Mac mini server):
 
-- **Node.js**: 18.x or newer. Download from [nodejs.org](https://nodejs.org/).
-- Recommended: Node 20 LTS for smoother native builds (canvas). If using Node 24, install Xcode Command Line Tools when prompted the first time a native module builds.
+- **Node.js**: 22.x (recommended). Download from [nodejs.org](https://nodejs.org/).
+- If using Node 24+, install Xcode Command Line Tools when prompted the first time a native module builds.
 - **npm**: Comes with Node.js.
 - **Git**: Required for cloning the repository. Install via [git-scm.com](https://git-scm.com/download/mac) or Xcode Command Line Tools: `xcode-select --install`.
 
