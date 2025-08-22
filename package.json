@@ -12,7 +12,8 @@
     "verify": "bash scripts/verify.sh",
     "update": "git pull --ff-only && npm ci && npm run verify",
     "test": "node runTests.js",
-    "auth:prompt": "node scripts/auth-prompt.js"
+    "auth:prompt": "node scripts/auth-prompt.js",
+    "auth:reset": "node scripts/auth-reset.js"
   },
   "dependencies": {
     "canvas": "^2.11.2",

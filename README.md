@@ -78,6 +78,15 @@ Then open `http://<your-server-ip>:3007` in your browser to view the bot.
 
 Assumes the Minecraft server is reachable at `localhost:25565`.
 
+If you get an auth error (e.g., "Profile not found"):
+
+- Trigger a device-code login (terminal):
+  - `npm run auth:prompt`
+- Or clear auth and re-prompt:
+  - `npm run auth:reset`
+
+Ensure you sign in with the Microsoft account that owns Java and has launched the game at least once. The bot uses the launcher’s auth cache by default.
+
 ---
 
 
