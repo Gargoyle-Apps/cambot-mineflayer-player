@@ -29,6 +29,10 @@
     },
     "@xboxreplay/xboxlive-auth@*": {
       "axios": "^1.6.8"
+    },
+    "minecraft-data": "^3.97.0",
+    "minecraft-protocol": {
+      "minecraft-data": "^3.97.0"
     }
   }
 }
