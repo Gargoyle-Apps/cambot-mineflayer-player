@@ -128,72 +128,105 @@ function tryTeleportTo(bot, targetName) {
 
 function startTeleportFilmingLoop(bot) {
   let active = true;
-  let queue = listOnlinePlayerNames(bot);
+  const roster = new Set();
+  let queue = [];
   let idx = 0;
-  let idleTimer = null;
-  let dwellTimer = null;
+  let timer = null; // used for both idle poll and dwell
   let currentTargetName = null;
+  let inStep = false;
+  let debounceTimer = null;
 
-  function refreshQueue() {
-    queue = listOnlinePlayerNames(bot);
+  function stopTimer() { if (timer) clearTimeout(timer); timer = null; }
+
+  function rebuildQueue() {
+    queue = Array.from(roster);
+    // Ensure bot itself is not included
+    const selfIdx = queue.indexOf(bot.username);
+    if (selfIdx !== -1) queue.splice(selfIdx, 1);
     if (idx >= queue.length) idx = 0;
     log.debug('tp.queue_refreshed', { queue });
   }
 
-  function stopTimers() { if (idleTimer) clearTimeout(idleTimer); if (dwellTimer) clearTimeout(dwellTimer); idleTimer = null; dwellTimer = null; }
+  function snapshotRoster() {
+    for (const name of Object.keys(bot.players)) {
+      if (name && name !== bot.username) roster.add(name);
+    }
+    rebuildQueue();
+  }
+
+  function debounceUpdate() {
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      rebuildQueue();
+      if (queue.length > 0 && timer === null) step();
+    }, 250);
+  }
 
   async function step() {
     if (!active) return;
-    stopTimers();
-    if (queue.length === 0) {
-      log.debug('tp.idle_waiting', { pollMs: TP_POLL_MS });
-      idleTimer = setTimeout(() => { refreshQueue(); step(); }, TP_POLL_MS);
-      return;
-    }
+    if (inStep) return;
+    inStep = true;
+    stopTimer();
+    try {
+      if (queue.length === 0) {
+        log.debug('tp.idle_waiting', { pollMs: TP_POLL_MS });
+        timer = setTimeout(() => { rebuildQueue(); inStep = false; step(); }, TP_POLL_MS);
+        return;
+      }
 
-    const name = queue[idx];
-    log.info('tp.attempt', { target: name });
-    const ok = await tryTeleportTo(bot, name);
-    if (!ok) {
-      log.warn('tp.failed', { target: name });
-      refreshQueue();
-      if (queue.length === 0) { step(); return; }
-      // If the same index is now out of range, wrap
-      if (idx >= queue.length) idx = 0;
-      step();
-      return;
-    }
+      const name = queue[idx];
+      log.info('tp.attempt', { target: name });
+      const ok = await tryTeleportTo(bot, name);
+      if (!ok) {
+        log.warn('tp.failed', { target: name });
+        roster.delete(name); // remove problematic entry
+        rebuildQueue();
+        inStep = false;
+        step();
+        return;
+      }
 
-    log.info('tp.success', { target: name, dwellMs: TP_DWELL_MS });
-    try { cameraManager.lockTargetToPlayer(name); } catch (_) {}
-    currentTargetName = name;
-    dwellTimer = setTimeout(() => {
-      idx = (idx + 1) % Math.max(1, queue.length);
-      currentTargetName = null;
-      refreshQueue();
-      step();
-    }, TP_DWELL_MS);
+      log.info('tp.success', { target: name, dwellMs: TP_DWELL_MS });
+      currentTargetName = name;
+      try { cameraManager.lockTargetToPlayer(name); } catch (_) {}
+      timer = setTimeout(() => {
+        idx = (idx + 1) % Math.max(1, queue.length);
+        currentTargetName = null;
+        inStep = false;
+        step();
+      }, TP_DWELL_MS);
+    } catch (e) {
+      inStep = false;
+      log.error('tp.step_error', { error: e?.message || String(e) });
+      timer = setTimeout(() => { step(); }, TP_POLL_MS);
+    }
   }
 
-  // React to join/leave to keep queue fresh and break idle
-  bot.on('playerJoined', () => { refreshQueue(); if (queue.length > 0 && !dwellTimer) step(); });
+  bot.on('playerJoined', (player) => {
+    const name = typeof player === 'string' ? player : (player && player.username) ? player.username : null;
+    if (name) roster.add(name);
+    debounceUpdate();
+  });
   bot.on('playerLeft', (player) => {
     const leftName = typeof player === 'string' ? player : (player && player.username) ? player.username : null;
-    refreshQueue();
+    if (leftName) roster.delete(leftName);
+    rebuildQueue();
     if (leftName && currentTargetName && leftName === currentTargetName) {
       log.info('tp.target_left', { target: leftName });
-      stopTimers();
+      stopTimer();
       currentTargetName = null;
-      if (idx >= queue.length) idx = 0;
+      inStep = false;
       step();
+    } else {
+      debounceUpdate();
     }
   });
-  bot.on('end', () => { active = false; stopTimers(); });
+  bot.on('end', () => { active = false; stopTimer(); });
 
-  refreshQueue();
+  snapshotRoster();
   step();
 
-  return () => { active = false; stopTimers(); };
+  return () => { active = false; stopTimer(); };
 }
 
 // We wrap the main logic in an async function to use 'await'
