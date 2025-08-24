@@ -132,6 +132,7 @@ function startTeleportFilmingLoop(bot) {
   let idx = 0;
   let idleTimer = null;
   let dwellTimer = null;
+  let currentTargetName = null;
 
   function refreshQueue() {
     queue = listOnlinePlayerNames(bot);
@@ -165,8 +166,10 @@ function startTeleportFilmingLoop(bot) {
 
     log.info('tp.success', { target: name, dwellMs: TP_DWELL_MS });
     try { cameraManager.lockTargetToPlayer(name); } catch (_) {}
+    currentTargetName = name;
     dwellTimer = setTimeout(() => {
       idx = (idx + 1) % Math.max(1, queue.length);
+      currentTargetName = null;
       refreshQueue();
       step();
     }, TP_DWELL_MS);
@@ -174,7 +177,17 @@ function startTeleportFilmingLoop(bot) {
 
   // React to join/leave to keep queue fresh and break idle
   bot.on('playerJoined', () => { refreshQueue(); if (queue.length > 0 && !dwellTimer) step(); });
-  bot.on('playerLeft', () => { refreshQueue(); });
+  bot.on('playerLeft', (player) => {
+    const leftName = typeof player === 'string' ? player : (player && player.username) ? player.username : null;
+    refreshQueue();
+    if (leftName && currentTargetName && leftName === currentTargetName) {
+      log.info('tp.target_left', { target: leftName });
+      stopTimers();
+      currentTargetName = null;
+      if (idx >= queue.length) idx = 0;
+      step();
+    }
+  });
   bot.on('end', () => { active = false; stopTimers(); });
 
   refreshQueue();
@@ -338,5 +351,4 @@ async function main() {
 }
 
 // Run the main function
-main();
 main();
