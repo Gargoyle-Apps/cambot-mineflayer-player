@@ -2,7 +2,6 @@
 
 const mineflayer = require('mineflayer');
 const keytar = require('keytar');
-const { startViewer } = require('./viewer');
 const cameraManager = require('./cameraManager');
 const path = require('path');
 const fs = require('fs');
@@ -263,8 +262,17 @@ async function main() {
       log.info('bot.spawned', { username: bot.username });
       console.log(`Bot '${bot.username}' has successfully spawned.`);
       console.log('Bot is now online and ready.');
-      startViewer(bot);
-      log.info('viewer.started');
+      if (process.env.CAMBOT_ENABLE_VIEWER !== 'false') {
+        try {
+          const { startViewer } = require('./viewer');
+          startViewer(bot);
+          log.info('viewer.started');
+        } catch (e) {
+          log.warn('viewer.start_failed', { error: e?.message || String(e) });
+        }
+      } else {
+        log.debug('viewer.disabled');
+      }
 
       // Set gamemode and start camera manager
       bot.setSettings({ viewDistance: VIEW_DISTANCE });
@@ -383,5 +391,15 @@ async function main() {
   }
 }
 
-// Run the main function
-main();
+// Run the main function when executed directly
+if (require.main === module) {
+  main();
+}
+
+// Export test hooks
+module.exports = {
+  probeTeleport,
+  listOnlinePlayerNames,
+  tryTeleportTo,
+  startTeleportFilmingLoop
+};
