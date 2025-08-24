@@ -48,7 +48,7 @@ async function runTests() {
       const other = Object.keys(bot.players).find((n) => n !== bot.username);
       if (other) {
         console.log(`Attempting tp verification to ${other} (may require permissions)...`);
-        const ok = await tryTeleportTo(bot, other);
+        const { ok } = await tryTeleportTo(bot, other);
         if (ok) {
           console.log('✅ Teleport verification OK');
           results.teleportVerify = 'PASS';

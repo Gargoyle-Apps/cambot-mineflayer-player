@@ -18,6 +18,7 @@ const TP_DWELL_MS = parseInt(process.env.CAMBOT_TP_DWELL_MS || '20000', 10);
 const TP_POLL_MS = parseInt(process.env.CAMBOT_TP_POLL_MS || '5000', 10);
 const TP_TIMEOUT_MS = parseInt(process.env.CAMBOT_TP_TIMEOUT_MS || '2000', 10);
 const TP_MIN_DELTA = parseFloat(process.env.CAMBOT_TP_MIN_DELTA || '3');
+let VERBOSE_ENABLED = false; // toggled via chat: "cambot verbose [on|off]"
 // Use the official launcher profiles folder so the bot shares the same auth
 const PROFILES_DIR = (function () {
   if (process.platform === 'darwin') {
@@ -91,7 +92,7 @@ function tryTeleportTo(bot, targetName) {
       clearTimeout(timer);
       if (result) log.info('tp.verified', { target: targetName, reason });
       else log.warn('tp.not_verified', { target: targetName, reason });
-      resolve(!!result);
+      resolve({ ok: !!result, reason });
     }
 
     function onMsg(jsonMsg) {
@@ -99,9 +100,9 @@ function tryTeleportTo(bot, targetName) {
         const text = jsonMsg && typeof jsonMsg.toString === 'function' ? jsonMsg.toString() : String(jsonMsg || '');
         const lower = (text || '').toLowerCase();
         if (!lower) return;
-        if (lower.includes('you do not have permission') || lower.includes('player not found') || lower.includes('unknown or incomplete command') || lower.includes('no entity was found')) {
-          return finish(false, 'server_message_denied_or_missing');
-        }
+        if (lower.includes('you do not have permission')) return finish(false, 'permission');
+        if (lower.includes('player not found') || lower.includes('no entity was found')) return finish(false, 'player_not_found');
+        if (lower.includes('unknown or incomplete command')) return finish(false, 'server_message');
       } catch (_) {}
     }
 
@@ -134,6 +135,17 @@ function startTeleportFilmingLoop(bot) {
   let currentTargetName = null;
   let inStep = false;
   let debounceTimer = null;
+  let lastSaid = { msg: '', ts: 0 };
+  let hasAnnouncedFirst = false;
+
+  function sayCompact(msg) {
+    if (!VERBOSE_ENABLED) return;
+    const now = Date.now();
+    if (msg === lastSaid.msg && now - lastSaid.ts < 5000) return; // dedupe identical within 5s
+    if (now - lastSaid.ts < 1000) return; // 1s cooldown
+    bot.chat(`[Cambot] ${msg}`);
+    lastSaid = { msg, ts: now };
+  }
 
   function stopTimer() { if (timer) clearTimeout(timer); timer = null; }
 
@@ -169,15 +181,17 @@ function startTeleportFilmingLoop(bot) {
     try {
       if (queue.length === 0) {
         log.debug('tp.idle_waiting', { pollMs: TP_POLL_MS });
+        sayCompact('No players online. Waiting…');
         timer = setTimeout(() => { rebuildQueue(); inStep = false; step(); }, TP_POLL_MS);
         return;
       }
 
       const name = queue[idx];
       log.info('tp.attempt', { target: name });
-      const ok = await tryTeleportTo(bot, name);
+      const { ok, reason } = await tryTeleportTo(bot, name);
       if (!ok) {
-        log.warn('tp.failed', { target: name });
+        log.warn('tp.failed', { target: name, reason });
+        sayCompact(`Teleport failed (${reason || 'unknown'}).`);
         roster.delete(name); // remove problematic entry
         rebuildQueue();
         inStep = false;
@@ -188,6 +202,14 @@ function startTeleportFilmingLoop(bot) {
       log.info('tp.success', { target: name, dwellMs: TP_DWELL_MS });
       currentTargetName = name;
       try { cameraManager.lockTargetToPlayer(name); } catch (_) {}
+      const dwellSeconds = Math.round(TP_DWELL_MS / 1000);
+      const mode = cameraManager && cameraManager.config ? cameraManager.config.viewModeMix : 'look_at';
+      if (!hasAnnouncedFirst) {
+        sayCompact(`Teleported to ${name}. Filming ${dwellSeconds}s. Mode=${mode}.`);
+        hasAnnouncedFirst = true;
+      } else {
+        sayCompact(`Switched to ${name}. Filming ${dwellSeconds}s. Mode=${mode}.`);
+      }
       timer = setTimeout(() => {
         idx = (idx + 1) % Math.max(1, queue.length);
         currentTargetName = null;
@@ -215,6 +237,7 @@ function startTeleportFilmingLoop(bot) {
       stopTimer();
       currentTargetName = null;
       inStep = false;
+      sayCompact(`${leftName} left. Continuing.`);
       step();
     } else {
       debounceUpdate();
@@ -311,6 +334,16 @@ async function main() {
       const key = args[1];
       let value = args[2];
       log.info('chat.command_received', { from: username, key, value });
+      if (key === 'verbose') {
+        if (!value) {
+          VERBOSE_ENABLED = !VERBOSE_ENABLED;
+        } else {
+          const v = String(value).toLowerCase();
+          VERBOSE_ENABLED = v === 'on' || v === 'true' || v === '1';
+        }
+        bot.chat(`[Cambot] Verbose ${VERBOSE_ENABLED ? 'on' : 'off'}.`);
+        return;
+      }
 
       // Help output
       if (typeof key === 'undefined' || key === 'help') {
