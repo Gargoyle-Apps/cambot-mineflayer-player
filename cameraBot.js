@@ -6,12 +6,15 @@ const { startViewer } = require('./viewer');
 const cameraManager = require('./cameraManager');
 const path = require('path');
 const fs = require('fs');
+const logger = require('./logger');
+const log = logger.child({ component: 'bot' });
 
 // --- Configuration ---
 const SERVICE_NAME = 'MineflayerBot'; // Must match the Keychain Item Name
 const EMAIL_ACCOUNT_KEY = 'bot-email'; // The key for the email item
 const SERVER_IP = 'localhost';
 const SERVER_PORT = 25565;
+const VIEW_DISTANCE = parseInt(process.env.CAMBOT_VIEW_DISTANCE || '6', 10);
 // Use the official launcher profiles folder so the bot shares the same auth
 const PROFILES_DIR = (function () {
   if (process.platform === 'darwin') {
@@ -30,12 +33,15 @@ async function main() {
     const email = await keytar.getPassword(SERVICE_NAME, EMAIL_ACCOUNT_KEY);
 
     if (!email) {
+      log.error('auth.email_missing', { service: SERVICE_NAME, account: EMAIL_ACCOUNT_KEY });
       console.error(`Could not find bot email in Keychain under service '${SERVICE_NAME}' and account '${EMAIL_ACCOUNT_KEY}'.`);
       console.error('Please provide the email via macOS Keychain only.');
       console.error('Keychain: Item Name = MineflayerBot, Account Name = bot-email, Password = <bot email>');
       return;
     }
 
+    log.info('auth.email_resolved');
+    log.info('bot.starting', { server: { host: SERVER_IP, port: SERVER_PORT }, profilesFolder: PROFILES_DIR, node: process.versions.node });
     console.log('Email resolved. Starting Microsoft device code authentication on first run if needed...');
 
     const bot = mineflayer.createBot({
@@ -51,14 +57,20 @@ async function main() {
 
     // --- Bot Event Handlers ---
     bot.once('spawn', () => {
+      log.info('bot.spawned', { username: bot.username });
       console.log(`Bot '${bot.username}' has successfully spawned.`);
       console.log('Bot is now online and ready.');
       startViewer(bot);
+      log.info('viewer.started');
 
       // Set gamemode and start camera manager
+      bot.setSettings({ viewDistance: VIEW_DISTANCE });
+      log.debug('settings.view_distance_set', { viewDistance: VIEW_DISTANCE });
       const gamemode = cameraManager.config.defaultGamemode;
       bot.chat(`/gamemode ${gamemode}`);
+      log.info('gamemode.set', { gamemode });
       cameraManager.start(bot);
+      log.info('manager.started');
     });
 
     // Chat command handler for cambot controls
@@ -70,6 +82,7 @@ async function main() {
 
       const key = args[1];
       let value = args[2];
+      log.info('chat.command_received', { from: username, key, value });
 
       // Help output
       if (typeof key === 'undefined' || key === 'help') {
@@ -78,6 +91,7 @@ async function main() {
         const cfg = cameraManager.config;
         bot.chat(`current: radius=${cfg.entitySearchRadius}, hostile=${cfg.includeHostileMobs}, mix=${cfg.targetMix}, mode=${cfg.viewModeMix}`);
         bot.chat(`current: circleSpeed=${cfg.circleSpeed}, circleRadius=${cfg.circleRadius}, overShoulder=${cfg.overShoulderDistance}, switchInterval=${Math.round(cfg.switchInterval/60000)}m`);
+        log.info('chat.help_shown', { to: username });
         return;
       }
 
@@ -88,11 +102,25 @@ async function main() {
           const existed = fs.existsSync(cacheFile);
           fs.rmSync(cacheFile, { force: true });
           bot.chat(existed ? 'Auth cache removed. Restarting to trigger re-auth...' : 'No auth cache found. Restarting to trigger new login...');
+          log.warn('auth.reauth_requested', { from: username, removed: existed });
         } catch (e) {
           bot.chat('Failed to clear auth cache, check logs.');
-          console.error('Failed to remove profiles dir:', e);
+          log.error('auth.reauth_failed', { error: e.message });
         }
         setTimeout(() => process.exit(0), 300);
+        return;
+      }
+
+      // Dynamic log level control
+      if (key === 'loglevel') {
+        const ok = logger.setLevel(value);
+        if (ok) {
+          bot.chat(`Log level set to ${logger.getLevel()}`);
+          log.info('logger.level_updated', { by: username, level: logger.getLevel() });
+        } else {
+          bot.chat('Invalid log level. Use one of: error, warn, info, debug');
+          log.warn('logger.level_invalid', { requested: value, by: username });
+        }
         return;
       }
 
@@ -103,18 +131,34 @@ async function main() {
         else value = parseFloat(value);
       } else if (['entitySearchRadius', 'circleSpeed', 'overShoulderDistance', 'switchInterval', 'circleRadius'].includes(key)) {
         bot.chat(`Invalid number value for ${key}.`);
+        log.warn('config.update_invalid_number', { key, raw: args[2] });
         return;
       }
 
-      if (cameraManager.updateConfig(key, value)) bot.chat(`Camera setting '${key}' updated.`);
-      else bot.chat(`Unknown setting: '${key}'.`);
+      if (cameraManager.updateConfig(key, value)) {
+        bot.chat(`Camera setting '${key}' updated.`);
+        log.info('config.update', { key, value, by: username });
+      } else {
+        bot.chat(`Unknown setting: '${key}'.`);
+        log.warn('config.update_unknown_key', { key, by: username });
+      }
     });
 
-    bot.on('kicked', console.log);
-    bot.on('error', console.error);
-    bot.on('end', (reason) => console.log(`Bot disconnected. Reason: ${reason}`));
+    bot.on('kicked', (reason) => {
+      log.warn('bot.kicked', { reason });
+      console.log(reason);
+    });
+    bot.on('error', (err) => {
+      log.error('bot.error', { error: err?.message || String(err) });
+      console.error(err);
+    });
+    bot.on('end', (reason) => {
+      log.info('bot.ended', { reason });
+      console.log(`Bot disconnected. Reason: ${reason}`);
+    });
 
   } catch (err) {
+    log.error('bot.unexpected_error', { error: err?.message || String(err) });
     console.error('An unexpected error occurred during startup:', err);
   }
 }

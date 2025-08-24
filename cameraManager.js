@@ -2,6 +2,8 @@
 // Centralized camera behavior: target selection, view modes, movement updates
 
 const { pathfinder, goals: pathfinderGoals, Movements } = require('mineflayer-pathfinder');
+const logger = require('./logger');
+const log = logger.child({ component: 'manager' });
 
 // --- Default Configuration ---
 const config = {
@@ -29,10 +31,13 @@ let movementInterval = null;
 let switchIntervalHandle = null;
 let circleAngle = 0;
 let lastGoalPos = null; // For jitter avoidance
+let lastGoalLogTs = 0;
+const GOAL_LOG_THROTTLE_MS = parseInt(process.env.CAMBOT_GOAL_LOG_THROTTLE_MS || '2000', 10);
 
 function start(bot) {
   if (botRef) stop();
   botRef = bot;
+  log.debug('manager.start', { username: botRef.username });
 
   // Ensure pathfinder is loaded
   if (!botRef.pathfinder) {
@@ -43,19 +48,23 @@ function start(bot) {
 
   // Kick off targeting cycle and movement loop
   pickNextTarget();
+  log.debug('manager.initial_target_pick');
 
   if (movementInterval) clearInterval(movementInterval);
   movementInterval = setInterval(() => {
     safeUpdateMovement();
   }, 1000); // update once per second for smooth but light movement
+  log.debug('manager.movement_loop_started', { intervalMs: 1000 });
 
   if (switchIntervalHandle) clearInterval(switchIntervalHandle);
   switchIntervalHandle = setInterval(() => {
     pickNextTarget(true);
   }, config.switchInterval);
+  log.debug('manager.switch_loop_started', { intervalMs: config.switchInterval });
 }
 
 function stop() {
+  log.debug('manager.stop');
   if (movementInterval) clearInterval(movementInterval);
   if (switchIntervalHandle) clearInterval(switchIntervalHandle);
   movementInterval = null;
@@ -67,6 +76,7 @@ function stop() {
 function updateConfig(key, value) {
   if (!(key in config)) return false;
   config[key] = value;
+  log.debug('manager.config_updated', { key, value });
   return true;
 }
 
@@ -101,11 +111,20 @@ function pickNextTarget(force = false) {
 
   if (candidates.length === 0) {
     currentTarget = null;
+    log.debug('manager.no_candidates');
     return;
   }
 
   // Simple selection policy based on mix
   currentTarget = pickByMix(candidates);
+  if (currentTarget) {
+    const pos = currentTarget.position;
+    log.debug('manager.target_selected', {
+      type: currentTarget.username ? 'player' : (currentTarget.type || 'entity'),
+      username: currentTarget.username || null,
+      pos: pos ? { x: pos.x, y: pos.y, z: pos.z } : null
+    });
+  }
 }
 
 function pickByMix(candidates) {
@@ -136,14 +155,16 @@ function safeUpdateMovement() {
   if (!botRef || !currentTarget) return;
   if (!currentTarget.isValid) {
     currentTarget = null;
+    log.debug('manager.target_invalid');
     return;
   }
 
   try {
     const mode = resolveMode(config.viewModeMix);
+    log.debug('manager.mode_resolved', { mode });
     performModeMovement(mode);
   } catch (err) {
-    console.error('[CameraManager] Movement update error:', err.message);
+    log.error('manager.movement_error', { error: err.message });
   }
 }
 
@@ -204,6 +225,11 @@ function performModeMovement(mode) {
     if (shouldUpdate) {
       bot.pathfinder.setGoal(new goals.GoalNear(goalPos.x, goalPos.y, goalPos.z, 1));
       lastGoalPos = goalPos.clone();
+      const now = Date.now();
+      if (now - lastGoalLogTs >= GOAL_LOG_THROTTLE_MS) {
+        log.info('manager.goal_updated', { goal: { x: goalPos.x, y: goalPos.y, z: goalPos.z }, mode });
+        lastGoalLogTs = now;
+      }
     }
   }
 }
