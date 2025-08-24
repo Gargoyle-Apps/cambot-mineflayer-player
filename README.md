@@ -78,6 +78,12 @@ Then open `http://<your-server-ip>:3007` in your browser to view the bot.
 
 Assumes the Minecraft server is reachable at `localhost:25565`.
 
+Viewer can be disabled (useful for tests or headless environments):
+
+```bash
+CAMBOT_ENABLE_VIEWER=false node cameraBot.js
+```
+
 If you get an auth error (e.g., "Profile not found"):
 
 - Trigger a device-code login (terminal):
@@ -86,6 +92,23 @@ If you get an auth error (e.g., "Profile not found"):
   - `npm run auth:reset`
 
 Ensure you sign in with the Microsoft account that owns Java and has launched the game at least once. The bot uses the launcher’s auth cache by default.
+
+---
+
+### 5. Behavior: Teleport-based filming (default)
+
+- On spawn, the bot probes whether it can use `/tp`.
+- If teleport is permitted, it builds a roster of online players (excluding itself) and cycles through them:
+  - Teleports to a player, locks the camera on them, films for a dwell period, then advances to the next.
+  - If the filmed player disconnects mid-shot, it immediately refreshes the roster and continues.
+  - If the roster is empty, it waits and polls periodically until someone joins.
+- If teleport is not permitted, the bot prints and chats: "cambot can't teleport" and idles.
+
+Timing and behavior are configurable via environment variables (see section 11).
+
+Notes:
+- Default client `viewDistance` is 6 chunks. Increase if you want wider surroundings while filming: `CAMBOT_VIEW_DISTANCE=8`.
+- Existing camera modes (look_at, wide, circle, etc.) still apply while filming.
 
 ---
 
@@ -121,6 +144,12 @@ Auth/reauth commands:
 
 - `cambot reauth`: Clears the launcher auth cache file (`prismarine_auth.json`) and exits. Run the bot again to trigger a fresh Microsoft device-code login.
 
+Verbose and logging controls:
+
+- `cambot verbose` — toggles server chat announcements (compact, deduped)
+- `cambot verbose on|off` — explicit control
+- `cambot loglevel error|warn|info|debug` — adjust file/console logging verbosity at runtime
+
 Defaults:
 
 - `defaultGamemode`: `spectator`
@@ -140,13 +169,14 @@ Defaults:
 Run a simple integration smoke test:
 
 ```bash
-node runTests.js
+CAMBOT_ENABLE_VIEWER=false npm test
 ```
 
 Checks:
 - Connection and spawn
 - Spectator mode
 - Player discovery
+- Teleport verification (may require permissions on your server)
 
 ---
 
@@ -175,3 +205,26 @@ Optional (server-side, Fabric) for version bridging:
 
 - **ViaFabric (Fabric mod)** — allows newer/older clients to connect to your Fabric server. Install the jar in your server `mods/` folder.
 - **ViaBackwards (plugin/mod)** — enables older clients (e.g., 1.21) to join newer servers (e.g., 1.21.7). Install alongside ViaFabric.
+
+---
+
+### 11. Environment variables
+
+- `CAMBOT_ENABLE_VIEWER` — set to `false` to disable the viewer (default: enabled)
+- `CAMBOT_VIEW_DISTANCE` — chunks to request from server (default: `6`)
+- `CAMBOT_LOG_LEVEL` — `error|warn|info|debug` (default: `info`)
+- `CAMBOT_LOG_MAX_BYTES` — rotate log file at size in bytes (default: `5242880` ≈ 5MB)
+- `CAMBOT_LOG_MAX_AGE_MS` — rotate log file by age in ms (default: `900000` = 15m)
+- `CAMBOT_GOAL_LOG_THROTTLE_MS` — throttle movement goal logs (default: `2000`)
+- `CAMBOT_TP_DWELL_MS` — per-player filming time in ms (default: `20000`)
+- `CAMBOT_TP_POLL_MS` — idle poll interval in ms when no players online (default: `5000`)
+- `CAMBOT_TP_TIMEOUT_MS` — teleport verification timeout in ms (default: `2000`)
+- `CAMBOT_TP_MIN_DELTA` — minimum position delta (blocks) to confirm teleport (default: `3`)
+
+---
+
+### 12. Logging
+
+- Structured JSONL logs are written to `logs/session-<timestamp>.log`.
+- Automatic rotation by size and time; settings in section 11.
+- Movement goal updates log at `info` by default (throttled); lifecycle logs at `debug`.
