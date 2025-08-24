@@ -15,6 +15,8 @@ const EMAIL_ACCOUNT_KEY = 'bot-email'; // The key for the email item
 const SERVER_IP = 'localhost';
 const SERVER_PORT = 25565;
 const VIEW_DISTANCE = parseInt(process.env.CAMBOT_VIEW_DISTANCE || '6', 10);
+const TP_DWELL_MS = parseInt(process.env.CAMBOT_TP_DWELL_MS || '20000', 10);
+const TP_POLL_MS = parseInt(process.env.CAMBOT_TP_POLL_MS || '5000', 10);
 // Use the official launcher profiles folder so the bot shares the same auth
 const PROFILES_DIR = (function () {
   if (process.platform === 'darwin') {
@@ -25,6 +27,132 @@ const PROFILES_DIR = (function () {
   }
   return path.join(process.env.HOME || process.env.USERPROFILE || '.', '.minecraft');
 })();
+
+// Probe teleport permission by issuing a self-teleport with invalid coordinates.
+// If the server checks permission first, lack of permission yields a permission error.
+// If permitted, we'll get a validation error like "Y coordinate is too high".
+function probeTeleport(bot) {
+  return new Promise((resolve) => {
+    let resolved = false;
+    const timeoutMs = 2000;
+
+    function cleanup(result) {
+      if (resolved) return;
+      resolved = true;
+      bot.removeListener('message', onMessage);
+      clearTimeout(timer);
+      resolve(result);
+    }
+
+    function onMessage(jsonMsg) {
+      try {
+        const text = jsonMsg && typeof jsonMsg.toString === 'function' ? jsonMsg.toString() : String(jsonMsg || '');
+        const lower = (text || '').toLowerCase();
+        if (!lower) return;
+        if (lower.includes('permission')) return cleanup(false);
+        if (
+          lower.includes('teleported') ||
+          lower.includes('invalid') ||
+          lower.includes('too high') ||
+          lower.includes('no entity was found') ||
+          lower.includes('expected')
+        ) return cleanup(true);
+      } catch (_) {}
+    }
+
+    bot.on('message', onMessage);
+    // Target impossible Y to force validation if allowed
+    bot.chat('/tp @s 0 1000000 0');
+    const timer = setTimeout(() => cleanup(undefined), timeoutMs);
+  });
+}
+
+function listOnlinePlayerNames(bot) {
+  const names = [];
+  for (const [name, info] of Object.entries(bot.players)) {
+    if (!info) continue;
+    if (name === bot.username) continue;
+    names.push(name);
+  }
+  return names;
+}
+
+function tryTeleportTo(bot, targetName) {
+  return new Promise((resolve) => {
+    let done = false;
+    const timeout = setTimeout(() => { if (!done) { done = true; cleanup(); resolve(true); } }, 1200);
+    function cleanup() { bot.removeListener('message', onMsg); clearTimeout(timeout); }
+    function onMsg(jsonMsg) {
+      try {
+        const text = jsonMsg && typeof jsonMsg.toString === 'function' ? jsonMsg.toString() : String(jsonMsg || '');
+        const lower = (text || '').toLowerCase();
+        if (!lower) return;
+        if (lower.includes('no entity was found') || lower.includes('player not found') || lower.includes('unknown or incomplete command') || lower.includes('you do not have permission')) {
+          if (!done) { done = true; cleanup(); resolve(false); }
+        }
+      } catch (_) {}
+    }
+    bot.on('message', onMsg);
+    bot.chat(`/tp ${targetName}`);
+  });
+}
+
+function startTeleportFilmingLoop(bot) {
+  let active = true;
+  let queue = listOnlinePlayerNames(bot);
+  let idx = 0;
+  let idleTimer = null;
+  let dwellTimer = null;
+
+  function refreshQueue() {
+    queue = listOnlinePlayerNames(bot);
+    if (idx >= queue.length) idx = 0;
+    log.debug('tp.queue_refreshed', { queue });
+  }
+
+  function stopTimers() { if (idleTimer) clearTimeout(idleTimer); if (dwellTimer) clearTimeout(dwellTimer); idleTimer = null; dwellTimer = null; }
+
+  async function step() {
+    if (!active) return;
+    stopTimers();
+    if (queue.length === 0) {
+      log.debug('tp.idle_waiting', { pollMs: TP_POLL_MS });
+      idleTimer = setTimeout(() => { refreshQueue(); step(); }, TP_POLL_MS);
+      return;
+    }
+
+    const name = queue[idx];
+    log.info('tp.attempt', { target: name });
+    const ok = await tryTeleportTo(bot, name);
+    if (!ok) {
+      log.warn('tp.failed', { target: name });
+      refreshQueue();
+      if (queue.length === 0) { step(); return; }
+      // If the same index is now out of range, wrap
+      if (idx >= queue.length) idx = 0;
+      step();
+      return;
+    }
+
+    log.info('tp.success', { target: name, dwellMs: TP_DWELL_MS });
+    try { cameraManager.lockTargetToPlayer(name); } catch (_) {}
+    dwellTimer = setTimeout(() => {
+      idx = (idx + 1) % Math.max(1, queue.length);
+      refreshQueue();
+      step();
+    }, TP_DWELL_MS);
+  }
+
+  // React to join/leave to keep queue fresh and break idle
+  bot.on('playerJoined', () => { refreshQueue(); if (queue.length > 0 && !dwellTimer) step(); });
+  bot.on('playerLeft', () => { refreshQueue(); });
+  bot.on('end', () => { active = false; stopTimers(); });
+
+  refreshQueue();
+  step();
+
+  return () => { active = false; stopTimers(); };
+}
 
 // We wrap the main logic in an async function to use 'await'
 async function main() {
@@ -71,6 +199,23 @@ async function main() {
       log.info('gamemode.set', { gamemode });
       cameraManager.start(bot);
       log.info('manager.started');
+
+      // Probe teleport permission and cache on bot
+      probeTeleport(bot).then((canTp) => {
+        bot.canTeleport = !!canTp;
+        log.info('capability.teleport_probed', { canTeleport: bot.canTeleport });
+        if (bot.canTeleport) {
+          log.info('tp.loop_start');
+          startTeleportFilmingLoop(bot);
+        } else {
+          const msg = "cambot can't teleport";
+          bot.chat(msg);
+          console.log(msg);
+          log.warn('tp.unavailable');
+        }
+      }).catch((e) => {
+        log.warn('capability.teleport_probe_failed', { error: e?.message || String(e) });
+      });
     });
 
     // Chat command handler for cambot controls
