@@ -17,6 +17,8 @@ const SERVER_PORT = 25565;
 const VIEW_DISTANCE = parseInt(process.env.CAMBOT_VIEW_DISTANCE || '6', 10);
 const TP_DWELL_MS = parseInt(process.env.CAMBOT_TP_DWELL_MS || '20000', 10);
 const TP_POLL_MS = parseInt(process.env.CAMBOT_TP_POLL_MS || '5000', 10);
+const TP_TIMEOUT_MS = parseInt(process.env.CAMBOT_TP_TIMEOUT_MS || '2000', 10);
+const TP_MIN_DELTA = parseFloat(process.env.CAMBOT_TP_MIN_DELTA || '3');
 // Use the official launcher profiles folder so the bot shares the same auth
 const PROFILES_DIR = (function () {
   if (process.platform === 'darwin') {
@@ -79,21 +81,48 @@ function listOnlinePlayerNames(bot) {
 
 function tryTeleportTo(bot, targetName) {
   return new Promise((resolve) => {
-    let done = false;
-    const timeout = setTimeout(() => { if (!done) { done = true; cleanup(); resolve(true); } }, 1200);
-    function cleanup() { bot.removeListener('message', onMsg); clearTimeout(timeout); }
+    let resolved = false;
+    const startPos = bot.entity && bot.entity.position ? bot.entity.position.clone() : null;
+
+    function finish(result, reason) {
+      if (resolved) return;
+      resolved = true;
+      bot.removeListener('message', onMsg);
+      bot.removeListener('move', onMove);
+      clearTimeout(timer);
+      if (result) log.info('tp.verified', { target: targetName, reason });
+      else log.warn('tp.not_verified', { target: targetName, reason });
+      resolve(!!result);
+    }
+
     function onMsg(jsonMsg) {
       try {
         const text = jsonMsg && typeof jsonMsg.toString === 'function' ? jsonMsg.toString() : String(jsonMsg || '');
         const lower = (text || '').toLowerCase();
         if (!lower) return;
-        if (lower.includes('no entity was found') || lower.includes('player not found') || lower.includes('unknown or incomplete command') || lower.includes('you do not have permission')) {
-          if (!done) { done = true; cleanup(); resolve(false); }
+        if (lower.includes('you do not have permission') || lower.includes('player not found') || lower.includes('unknown or incomplete command') || lower.includes('no entity was found')) {
+          return finish(false, 'server_message_denied_or_missing');
         }
       } catch (_) {}
     }
+
+    function onMove() {
+      try {
+        if (!startPos) return;
+        const nowPos = bot.entity && bot.entity.position ? bot.entity.position : null;
+        if (!nowPos) return;
+        const dx = nowPos.x - startPos.x;
+        const dy = nowPos.y - startPos.y;
+        const dz = nowPos.z - startPos.z;
+        const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+        if (dist >= TP_MIN_DELTA) return finish(true, 'position_changed');
+      } catch (_) {}
+    }
+
     bot.on('message', onMsg);
+    bot.on('move', onMove);
     bot.chat(`/tp ${targetName}`);
+    const timer = setTimeout(() => finish(false, 'timeout'), TP_TIMEOUT_MS);
   });
 }
 
@@ -309,4 +338,5 @@ async function main() {
 }
 
 // Run the main function
+main();
 main();
