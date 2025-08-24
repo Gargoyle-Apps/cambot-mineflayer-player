@@ -2,6 +2,7 @@
 
 const mineflayer = require('mineflayer');
 const keytar = require('keytar');
+const { tryTeleportTo } = require('./cameraBot');
 
 const SERVICE_NAME = 'MineflayerBot';
 const SERVER_IP = 'localhost';
@@ -11,7 +12,7 @@ const EXPECTED_GAMEMODE = 'spectator';
 async function runTests() {
   console.log('--- Running Bot Integration Tests ---');
   let bot;
-  const results = { connection: 'FAIL', spectatorMode: 'FAIL', playerDiscovery: 'FAIL' };
+  const results = { connection: 'FAIL', spectatorMode: 'FAIL', playerDiscovery: 'FAIL', teleportVerify: 'FAIL' };
 
   try {
     const email = await keytar.getPassword(SERVICE_NAME, 'bot-email');
@@ -44,6 +45,17 @@ async function runTests() {
     if (playerCount > 1) {
       console.log('✅ Player discovery OK');
       results.playerDiscovery = 'PASS';
+      const other = Object.keys(bot.players).find((n) => n !== bot.username);
+      if (other) {
+        console.log(`Attempting tp verification to ${other} (may require permissions)...`);
+        const ok = await tryTeleportTo(bot, other);
+        if (ok) {
+          console.log('✅ Teleport verification OK');
+          results.teleportVerify = 'PASS';
+        } else {
+          console.warn('⚠️ Teleport verification failed (may be expected without perms)');
+        }
+      }
     } else {
       console.error('❌ No other players visible');
     }

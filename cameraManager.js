@@ -12,7 +12,7 @@ const config = {
   // Targeting
   entitySearchRadius: 120, // blocks
   includeHostileMobs: false,
-  targetMix: 'players_only', // players_only | entities_only | balanced | player_focused
+  targetMix: 'players_only', // keep players_only as default; entity scanning disabled in tp mode
 
   // View modes
   viewModeMix: 'look_at', // random | look_at | ots | circle | wide
@@ -33,6 +33,7 @@ let circleAngle = 0;
 let lastGoalPos = null; // For jitter avoidance
 let lastGoalLogTs = 0;
 const GOAL_LOG_THROTTLE_MS = parseInt(process.env.CAMBOT_GOAL_LOG_THROTTLE_MS || '2000', 10);
+let lockedPlayerName = null; // When set, we only track this player's entity
 
 function start(bot) {
   if (botRef) stop();
@@ -46,9 +47,7 @@ function start(bot) {
   const movements = new Movements(botRef);
   botRef.pathfinder.setMovements(movements);
 
-  // Kick off targeting cycle and movement loop
-  pickNextTarget();
-  log.debug('manager.initial_target_pick');
+  // Kick off movement loop; selection is lock-driven now
 
   if (movementInterval) clearInterval(movementInterval);
   movementInterval = setInterval(() => {
@@ -56,11 +55,9 @@ function start(bot) {
   }, 1000); // update once per second for smooth but light movement
   log.debug('manager.movement_loop_started', { intervalMs: 1000 });
 
+  // Disable old target switching loop; view targets are lock-driven via teleport
   if (switchIntervalHandle) clearInterval(switchIntervalHandle);
-  switchIntervalHandle = setInterval(() => {
-    pickNextTarget(true);
-  }, config.switchInterval);
-  log.debug('manager.switch_loop_started', { intervalMs: config.switchInterval });
+  switchIntervalHandle = null;
 }
 
 function stop() {
@@ -80,51 +77,8 @@ function updateConfig(key, value) {
   return true;
 }
 
-function pickNextTarget(force = false) {
-  if (!botRef) return;
-
-  // Build candidate list
-  const candidates = [];
-  const origin = botRef.entity?.position;
-  if (!origin) return;
-
-  // Players (exclude self)
-  for (const [username, player] of Object.entries(botRef.players)) {
-    if (!player || !player.entity) continue;
-    if (username === botRef.username) continue;
-    if (player.entity.position.distanceTo(origin) <= config.entitySearchRadius) {
-      candidates.push(player.entity);
-    }
-  }
-
-  // Entities (optionally include hostile mobs)
-  if (config.targetMix !== 'players_only') {
-    for (const entity of Object.values(botRef.entities)) {
-      if (!entity || !entity.position) continue;
-      if (entity.type !== 'mob' && entity.type !== 'object') continue;
-      if (!config.includeHostileMobs && isHostile(entity)) continue;
-      if (entity.position.distanceTo(origin) <= config.entitySearchRadius) {
-        candidates.push(entity);
-      }
-    }
-  }
-
-  if (candidates.length === 0) {
-    currentTarget = null;
-    log.debug('manager.no_candidates');
-    return;
-  }
-
-  // Simple selection policy based on mix
-  currentTarget = pickByMix(candidates);
-  if (currentTarget) {
-    const pos = currentTarget.position;
-    log.debug('manager.target_selected', {
-      type: currentTarget.username ? 'player' : (currentTarget.type || 'entity'),
-      username: currentTarget.username || null,
-      pos: pos ? { x: pos.x, y: pos.y, z: pos.z } : null
-    });
-  }
+function pickNextTarget() {
+  // Deprecated in tp mode; kept as no-op to avoid breaking callers
 }
 
 function pickByMix(candidates) {
@@ -238,6 +192,31 @@ function randomOf(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-module.exports = { start, stop, updateConfig, config };
+function lockTargetToPlayer(name) {
+  lockedPlayerName = name || null;
+  log.debug('manager.lock_target_set', { name: lockedPlayerName });
+}
+
+function clearTargetLock() {
+  lockedPlayerName = null;
+  currentTarget = null;
+  log.debug('manager.lock_target_cleared');
+}
+
+// Resolve currentTarget from lock before each movement update
+const _origSafeUpdateMovement = safeUpdateMovement;
+safeUpdateMovement = function () {
+  if (!botRef) return;
+  if (lockedPlayerName) {
+    const info = botRef.players[lockedPlayerName];
+    currentTarget = info && info.entity ? info.entity : null;
+    if (!currentTarget) {
+      log.debug('manager.lock_target_not_visible', { name: lockedPlayerName });
+    }
+  }
+  _origSafeUpdateMovement();
+};
+
+module.exports = { start, stop, updateConfig, config, lockTargetToPlayer, clearTargetLock };
 
 
