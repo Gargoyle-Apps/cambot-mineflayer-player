@@ -44,5 +44,5 @@ next-env.d.ts
 # internal docs (private)
 /internal
 
-#ref
-/ref 
+# reference materials (kept locally only)
+/ref/
