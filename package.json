@@ -1,5 +1,5 @@
 {
-  "name": "minecraft-camera-bot",
+  "name": "cambot-mineflayer-prismarine-viewer",
   "version": "1.0.0",
   "description": "A Mineflayer bot for cinematic camera work in Minecraft.",
   "main": "cameraBot.js",

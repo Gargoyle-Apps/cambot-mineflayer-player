@@ -1,6 +1,8 @@
-# Minecraft Camera Bot
+# Cambot: Mineflayer + Prismarine Viewer (Viewer Edition)
 
-This project uses Mineflayer to create an automated "camera" bot in Minecraft. It connects to a server, exposes a browser-based viewer, and is intended for cinematic behaviors like following and circling players.
+This edition of Cambot uses Mineflayer to create an automated "camera" bot in Minecraft and includes a browser-based viewer powered by Prismarine Viewer for live visuals. It connects to a server and is intended for cinematic behaviors like following and circling players.
+
+> Note: This repository is the Cambot "Viewer Edition" (includes Prismarine Viewer). A headless Cambot (no viewer) will live in a separate repository.
 
 ---
 
@@ -20,14 +22,14 @@ Install on any modern macOS machine (including a Mac mini server):
 Clone and setup (macOS):
 
 ```bash
-git clone https://github.com/ImpureCrumpet/mineflayer_camerabot.git
-cd mineflayer_camerabot
+git clone <REPO_URL> cambot-mineflayer-prismarine-viewer
+cd cambot-mineflayer-prismarine-viewer
 npm run setup:macos -- --email "you@example.com"
 npm run verify
 ```
 
 Notes:
-- The `git clone` command creates a folder named after the repo (`mineflayer_camerabot`) in your current directory. You can change the folder name by appending it to the clone command: `git clone <url> my-folder`.
+- The `git clone` command above checks out into a folder named `cambot-mineflayer-prismarine-viewer`. Replace `<REPO_URL>` with the HTTPS URL of this repository once renamed/forked.
 - `npm run setup:macos` installs project dependencies locally into this folder.
 - The `-- --email "you@example.com"` passes an argument through npm to the setup script. It provides your Microsoft account email, which the script stores in macOS Keychain under service `MineflayerBot` and account `bot-email`. If omitted, the script will prompt you to enter it interactively.
 
