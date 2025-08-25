@@ -169,7 +169,7 @@ Security note: The project enforces patched transitive dependencies via npm over
 
 ---
 
-### 11. Camera control via chat commands: Environment variables
+#### 10.1 Environment variables
 
 - `CAMBOT_ENABLE_VIEWER` — set to `false` to disable the viewer (default: enabled)
 - `CAMBOT_VIEW_DISTANCE` — chunks to request from server (default: `6`)
@@ -184,7 +184,7 @@ Security note: The project enforces patched transitive dependencies via npm over
 
 ---
 
-### 12. Dependencies & Resources
+### 11. Dependencies & Resources
 
 - **[Mineflayer](https://github.com/PrismarineJS/mineflayer)** — core bot library
 - **[mineflayer-pathfinder](https://github.com/PrismarineJS/mineflayer-pathfinder)** — pathfinding and movement goals
