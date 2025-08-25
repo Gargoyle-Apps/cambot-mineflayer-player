@@ -16,11 +16,9 @@
     "auth:reset": "node scripts/auth-reset.js"
   },
   "dependencies": {
-    "canvas": "^2.11.2",
     "keytar": "^7.9.0",
     "mineflayer": "^4.20.1",
-    "mineflayer-pathfinder": "^2.4.4",
-    "prismarine-viewer": "^1.33.0"
+    "mineflayer-pathfinder": "^2.4.4"
   },
   "overrides": {
     "axios": "^1.6.8",

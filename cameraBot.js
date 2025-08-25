@@ -313,17 +313,7 @@ async function main() {
       log.info('bot.spawned', { username: bot.username });
       console.log(`Bot '${bot.username}' has successfully spawned.`);
       console.log('Bot is now online and ready.');
-      if (process.env.CAMBOT_ENABLE_VIEWER !== 'false') {
-        try {
-          const { startViewer } = require('./viewer');
-          startViewer(bot);
-          log.info('viewer.started');
-        } catch (e) {
-          log.warn('viewer.start_failed', { error: e?.message || String(e) });
-        }
-      } else {
-        log.debug('viewer.disabled');
-      }
+      // Viewer removed in headless edition
 
       // Set gamemode and start camera manager
       bot.setSettings({ viewDistance: VIEW_DISTANCE });

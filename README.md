@@ -1,8 +1,8 @@
-# Cambot: Mineflayer + Prismarine Viewer (Viewer Edition)
+# Cambot: Mineflayer Camera Bot (Headless Edition)
 
-This edition of Cambot uses Mineflayer to create an automated "camera" bot in Minecraft and includes a browser-based viewer powered by Prismarine Viewer for live visuals. It connects to a server and is intended for cinematic behaviors like following and circling players.
+This edition of Cambot uses Mineflayer to create an automated "camera" bot in Minecraft. It connects to a server and is intended for cinematic behaviors like following and circling players. View the bot by attaching a human spectator to Cambot in-game (mod-less Spectator workflow).
 
-> Note: This repository is the Cambot "Viewer Edition" (includes Prismarine Viewer). A headless Cambot (no viewer) will live in a separate repository.
+> Note: This repository is the Cambot Headless Edition (no Prismarine Viewer).
 
 ---
 
@@ -69,15 +69,7 @@ Important:
 node cameraBot.js
 ```
 
-Then open `http://<your-server-ip>:3007` in your browser to view the bot.
-
 Assumes the Minecraft server is reachable at `localhost:25565`.
-
-Viewer can be disabled (useful for tests or headless environments):
-
-```bash
-CAMBOT_ENABLE_VIEWER=false node cameraBot.js
-```
 
 If you get an auth error (e.g., "Profile not found"):
 
@@ -89,12 +81,35 @@ If you get an auth error (e.g., "Profile not found"):
 Ensure you sign in with the Microsoft account that owns Java and has launched the game at least once. The bot uses the launcher’s auth cache by default.
 
 ---
+### 5. Spectator workflow (mod-less)
 
- 
+This setup avoids any client mod. You use a normal Minecraft client to spectate Cambot’s point of view.
 
+- Roles:
+  - Cambot: the Mineflayer-controlled bot account (this project)
+  - Spectator: a human player whose sole purpose is to spectate Cambot
+  - Other players: humans playing normally
 
+- Requirements:
+  - Server permissions to set the Spectator to spectator mode
+  - Cambot permissions to use `/gamemode spectator` and `/tp` (recommended), or adjust behaviors accordingly
+  - Separate Microsoft account for Cambot (best practice)
 
- 
+- Steps:
+  1. Start your server (Fabric/Vanilla/Spigot, etc.).
+  2. Start Cambot: `node cameraBot.js`.
+  3. Have players join as usual.
+  4. Set the Spectator player to spectator mode: `/gamemode spectator <Spectator>`.
+  5. Attach Spectator to Cambot’s POV:
+     - If available: `/spectate <CambotName>`; or
+     - Use the vanilla spectator UI to select Cambot from the player list.
+  6. Record/watch from the Spectator’s machine; it mirrors Cambot’s view as Cambot moves/teleports.
+
+- Notes:
+  - Cambot does not need to be aware of the Spectator. Any player can spectate Cambot at any time.
+  - Plugins/permissions may restrict spectate or command usage; grant permissions as needed.
+  - On some setups, death/dimension change can break spectate; reattach if needed.
+
 
 ### 7. Camera control via chat commands
 
@@ -138,7 +153,7 @@ Defaults:
 Run a simple integration smoke test:
 
 ```bash
-CAMBOT_ENABLE_VIEWER=false npm test
+npm test
 ```
 
 Checks:
@@ -172,8 +187,6 @@ Security note: The project enforces patched transitive dependencies via npm over
 ---
 
 #### 10.1 Environment variables
-
-- `CAMBOT_ENABLE_VIEWER` — set to `false` to disable the viewer (default: enabled)
 - `CAMBOT_VIEW_DISTANCE` — chunks to request from server (default: `6`)
 - `CAMBOT_LOG_LEVEL` — `error|warn|info|debug` (default: `info`)
 - `CAMBOT_LOG_MAX_BYTES` — rotate log file at size in bytes (default: `5242880` ≈ 5MB)
@@ -190,7 +203,6 @@ Security note: The project enforces patched transitive dependencies via npm over
 
 - **[Mineflayer](https://github.com/PrismarineJS/mineflayer)** — core bot library
 - **[mineflayer-pathfinder](https://github.com/PrismarineJS/mineflayer-pathfinder)** — pathfinding and movement goals
-- **[Prismarine Viewer](https://github.com/PrismarineJS/prismarine-viewer)** — browser viewer
 - **[Keytar](https://github.com/atom/node-keytar)** — macOS Keychain access
 
 Optional (server-side, Fabric) for version bridging:
