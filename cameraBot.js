@@ -228,6 +228,22 @@ function startTeleportFilmingLoop(bot) {
     if (name) roster.add(name);
     debounceUpdate();
   });
+  // Some servers/plugins don't emit joins for players already online; also learn from player info updates
+  bot.on('playerUpdated', (player) => {
+    try {
+      const name = player && player.username ? player.username : null;
+      if (name && name !== bot.username) {
+        roster.add(name);
+        debounceUpdate();
+      }
+    } catch (_) {}
+  });
+  // Fallback: learn active talkers from chat
+  bot.on('chat', (username, message) => {
+    if (!username || username === bot.username) return;
+    roster.add(username);
+    debounceUpdate();
+  });
   bot.on('playerLeft', (player) => {
     const leftName = typeof player === 'string' ? player : (player && player.username) ? player.username : null;
     if (leftName) roster.delete(leftName);
