@@ -376,7 +376,7 @@ async function main() {
       // Help output
       if (typeof key === 'undefined' || key === 'help') {
         bot.chat("cambot usage: cambot <setting> <value>");
-        bot.chat("settings: entitySearchRadius, includeHostileMobs, targetMix, viewModeMix, circleSpeed, circleRadius, overShoulderDistance, switchInterval (minutes)");
+        bot.chat("settings: entitySearchRadius, includeHostileMobs, targetMix, viewModeMix, circleSpeed, circleRadius, overShoulderDistance, switchInterval (minutes), goalUpdateEpsilon, targetMotionEpsilon, minGoalUpdateIntervalMs, goalNearTolerance, targetHeadFactor, smoothingAlpha, wideHeight, wideBackoffExtra, wideMinDistance");
         const cfg = cameraManager.config;
         bot.chat(`current: radius=${cfg.entitySearchRadius}, hostile=${cfg.includeHostileMobs}, mix=${cfg.targetMix}, mode=${cfg.viewModeMix}`);
         bot.chat(`current: circleSpeed=${cfg.circleSpeed}, circleRadius=${cfg.circleRadius}, overShoulder=${cfg.overShoulderDistance}, switchInterval=${Math.round(cfg.switchInterval/60000)}m`);
@@ -418,7 +418,7 @@ async function main() {
       else if (value && !isNaN(parseFloat(value))) {
         if (key === 'switchInterval') value = parseFloat(value) * 60 * 1000;
         else value = parseFloat(value);
-      } else if (['entitySearchRadius', 'circleSpeed', 'overShoulderDistance', 'switchInterval', 'circleRadius'].includes(key)) {
+      } else if (['entitySearchRadius', 'circleSpeed', 'overShoulderDistance', 'switchInterval', 'circleRadius', 'goalUpdateEpsilon', 'targetMotionEpsilon', 'minGoalUpdateIntervalMs', 'goalNearTolerance', 'targetHeadFactor', 'smoothingAlpha', 'wideHeight', 'wideBackoffExtra', 'wideMinDistance'].includes(key)) {
         bot.chat(`Invalid number value for ${key}.`);
         log.warn('config.update_invalid_number', { key, raw: args[2] });
         return;

@@ -20,6 +20,19 @@ const config = {
   circleRadius: 8, // blocks; used in circle mode
   overShoulderDistance: 6,
 
+  // Movement smoothing & thresholds
+  goalUpdateEpsilon: 0.5, // minimum delta from last goal to update (blocks)
+  targetMotionEpsilon: 0.35, // minimum target motion to trigger update (blocks)
+  minGoalUpdateIntervalMs: 300, // min interval between goal updates
+  goalNearTolerance: 1, // pathfinder GoalNear radius
+  targetHeadFactor: 0.9, // fraction of target height to look at
+  smoothingAlpha: 0.35, // EMA factor applied to goal positions [0..1]
+
+  // Wide mode tuning
+  wideHeight: 6,
+  wideBackoffExtra: 8, // extra distance added to current distance
+  wideMinDistance: 12,
+
   // Timing
   switchInterval: 5 * 60 * 1000 // 5 minutes in ms
 };
@@ -34,6 +47,8 @@ let lastGoalPos = null; // For jitter avoidance
 let lastGoalLogTs = 0;
 const GOAL_LOG_THROTTLE_MS = parseInt(process.env.CAMBOT_GOAL_LOG_THROTTLE_MS || '2000', 10);
 let lockedPlayerName = null; // When set, we only track this player's entity
+let lastTargetPos = null;
+let lastGoalSetTs = 0;
 
 function start(bot) {
   if (botRef) stop();
@@ -135,7 +150,7 @@ function performModeMovement(mode) {
   const target = currentTarget;
   const goals = pathfinderGoals;
 
-  const targetHead = target.position.offset(0, target.height, 0);
+  const targetHead = target.position.offset(0, target.height * config.targetHeadFactor, 0);
   bot.lookAt(targetHead, true);
 
   let goalPos = null;
@@ -165,8 +180,8 @@ function performModeMovement(mode) {
     }
     case 'wide': {
       const yaw = bot.entity.yaw || 0;
-      const d = Math.max(12, distance + 8);
-      goalPos = bot.entity.position.offset(Math.cos(yaw) * d, 6, Math.sin(yaw) * d);
+      const d = Math.max(config.wideMinDistance, distance + config.wideBackoffExtra);
+      goalPos = bot.entity.position.offset(Math.cos(yaw) * d, config.wideHeight, Math.sin(yaw) * d);
       break;
     }
     default:
@@ -174,17 +189,29 @@ function performModeMovement(mode) {
   }
 
   if (goalPos) {
-    // Jitter avoidance: only update pathfinder goal if moved significantly
-    const shouldUpdate = !lastGoalPos || goalPos.distanceTo(lastGoalPos) > 0.5;
-    if (shouldUpdate) {
-      bot.pathfinder.setGoal(new goals.GoalNear(goalPos.x, goalPos.y, goalPos.z, 1));
+    // Optional smoothing (EMA)
+    if (lastGoalPos && config.smoothingAlpha > 0 && config.smoothingAlpha < 1) {
+      goalPos = lastGoalPos.clone().lerp(goalPos, config.smoothingAlpha);
+    }
+
+    const now = Date.now();
+    const sinceLast = now - lastGoalSetTs;
+    const targetDelta = lastTargetPos ? target.position.distanceTo(lastTargetPos) : Infinity;
+    const goalDelta = !lastGoalPos ? Infinity : goalPos.distanceTo(lastGoalPos);
+
+    const passedInterval = sinceLast >= config.minGoalUpdateIntervalMs;
+    const movedEnough = goalDelta > config.goalUpdateEpsilon || targetDelta > config.targetMotionEpsilon;
+
+    if (!lastGoalPos || (passedInterval && movedEnough)) {
+      bot.pathfinder.setGoal(new goals.GoalNear(goalPos.x, goalPos.y, goalPos.z, config.goalNearTolerance));
       lastGoalPos = goalPos.clone();
-      const now = Date.now();
+      lastGoalSetTs = now;
       if (now - lastGoalLogTs >= GOAL_LOG_THROTTLE_MS) {
         log.info('manager.goal_updated', { goal: { x: goalPos.x, y: goalPos.y, z: goalPos.z }, mode });
         lastGoalLogTs = now;
       }
     }
+    lastTargetPos = target.position.clone();
   }
 }
 
