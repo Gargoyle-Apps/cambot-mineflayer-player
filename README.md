@@ -33,14 +33,7 @@ Notes:
 
 ---
 
-### 2.1 Where files are stored on your Mac
-
-- Project files: wherever you run `git clone` (for example `~/Projects/mineflayer_camerabot`).
-- Dependencies: installed into the project’s local `node_modules` directory (no global installs required).
-- Credentials: stored in the macOS Keychain (not in your project folder). The bot reads the item `MineflayerBot` / `bot-email` via Keytar.
-- Nothing else is written outside your project directory or Keychain.
-
----
+ 
 
 ### 3. Credentials (macOS Keychain only) and Microsoft Auth
 
@@ -95,37 +88,11 @@ Ensure you sign in with the Microsoft account that owns Java and has launched th
 
 ---
 
-### 5. Behavior: Teleport-based filming (default)
-
-- On spawn, the bot probes whether it can use `/tp`.
-- If teleport is permitted, it builds a roster of online players (excluding itself) and cycles through them:
-  - Teleports to a player, locks the camera on them, films for a dwell period, then advances to the next.
-  - If the filmed player disconnects mid-shot, it immediately refreshes the roster and continues.
-  - If the roster is empty, it waits and polls periodically until someone joins.
-- If teleport is not permitted, the bot prints and chats: "cambot can't teleport" and idles.
-
-Timing and behavior are configurable via environment variables (see section 11).
-
-Notes:
-- Default client `viewDistance` is 6 chunks. Increase if you want wider surroundings while filming: `CAMBOT_VIEW_DISTANCE=8`.
-- Existing camera modes (look_at, wide, circle, etc.) still apply while filming.
-
----
+ 
 
 
 
-### 6. Client machine notes
-
-- Ensure Node 18+ is installed (e.g., via `nvm` or installer).
-- Keep the server and bot on the same LAN for lower latency.
-- Expose port `3007` on the client if viewing from other devices (not recommended)
-
-Viewer prerequisites (handled by setup):
-
-- On macOS, `scripts/setup-macos.sh` installs native libraries and the `canvas` package used by Prismarine Viewer.
-- If you skip the setup script, install via Homebrew: `brew install pkg-config cairo pango libpng jpeg giflib librsvg`, then `npm install canvas`.
-
----
+ 
 
 ### 7. Camera control via chat commands
 
@@ -194,7 +161,30 @@ Security note: The project enforces patched transitive dependencies via npm over
 
 ---
 
-### 10. Dependencies & Resources
+### 10. Logging
+
+- Structured JSONL logs are written to `logs/session-<timestamp>.log`.
+- Automatic rotation by size and time; settings in environment variables below.
+- Movement goal updates log at `info` by default (throttled); lifecycle logs at `debug`.
+
+---
+
+### 11. Camera control via chat commands: Environment variables
+
+- `CAMBOT_ENABLE_VIEWER` — set to `false` to disable the viewer (default: enabled)
+- `CAMBOT_VIEW_DISTANCE` — chunks to request from server (default: `6`)
+- `CAMBOT_LOG_LEVEL` — `error|warn|info|debug` (default: `info`)
+- `CAMBOT_LOG_MAX_BYTES` — rotate log file at size in bytes (default: `5242880` ≈ 5MB)
+- `CAMBOT_LOG_MAX_AGE_MS` — rotate log file by age in ms (default: `900000` = 15m)
+- `CAMBOT_GOAL_LOG_THROTTLE_MS` — throttle movement goal logs (default: `2000`)
+- `CAMBOT_TP_DWELL_MS` — per-player filming time in ms (default: `20000`)
+- `CAMBOT_TP_POLL_MS` — idle poll interval in ms when no players online (default: `5000`)
+- `CAMBOT_TP_TIMEOUT_MS` — teleport verification timeout in ms (default: `4000`)
+- `CAMBOT_TP_MIN_DELTA` — minimum position delta (blocks) to confirm teleport (default: `0.5`)
+
+---
+
+### 12. Dependencies & Resources
 
 - **[Mineflayer](https://github.com/PrismarineJS/mineflayer)** — core bot library
 - **[mineflayer-pathfinder](https://github.com/PrismarineJS/mineflayer-pathfinder)** — pathfinding and movement goals
@@ -206,25 +196,4 @@ Optional (server-side, Fabric) for version bridging:
 - **ViaFabric (Fabric mod)** — allows newer/older clients to connect to your Fabric server. Install the jar in your server `mods/` folder.
 - **ViaBackwards (plugin/mod)** — enables older clients (e.g., 1.21) to join newer servers (e.g., 1.21.7). Install alongside ViaFabric.
 
----
-
-### 11. Environment variables
-
-- `CAMBOT_ENABLE_VIEWER` — set to `false` to disable the viewer (default: enabled)
-- `CAMBOT_VIEW_DISTANCE` — chunks to request from server (default: `6`)
-- `CAMBOT_LOG_LEVEL` — `error|warn|info|debug` (default: `info`)
-- `CAMBOT_LOG_MAX_BYTES` — rotate log file at size in bytes (default: `5242880` ≈ 5MB)
-- `CAMBOT_LOG_MAX_AGE_MS` — rotate log file by age in ms (default: `900000` = 15m)
-- `CAMBOT_GOAL_LOG_THROTTLE_MS` — throttle movement goal logs (default: `2000`)
-- `CAMBOT_TP_DWELL_MS` — per-player filming time in ms (default: `20000`)
-- `CAMBOT_TP_POLL_MS` — idle poll interval in ms when no players online (default: `5000`)
-- `CAMBOT_TP_TIMEOUT_MS` — teleport verification timeout in ms (default: `2000`)
-- `CAMBOT_TP_MIN_DELTA` — minimum position delta (blocks) to confirm teleport (default: `3`)
-
----
-
-### 12. Logging
-
-- Structured JSONL logs are written to `logs/session-<timestamp>.log`.
-- Automatic rotation by size and time; settings in section 11.
-- Movement goal updates log at `info` by default (throttled); lifecycle logs at `debug`.
+ 
