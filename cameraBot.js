@@ -274,9 +274,7 @@ async function main() {
       port: SERVER_PORT,
       username: email,
       auth: 'microsoft',
-      // Default to 1.21 so servers with ViaBackwards can accept the client.
-      // If your server is strictly 1.21.7 without ViaBackwards, change to '1.21.7'.
-      version: '1.21',
+      // Let Mineflayer auto-detect the server protocol version.
       profilesFolder: PROFILES_DIR
     });
 
