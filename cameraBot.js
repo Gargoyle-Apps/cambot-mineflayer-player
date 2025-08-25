@@ -16,8 +16,8 @@ const SERVER_PORT = 25565;
 const VIEW_DISTANCE = parseInt(process.env.CAMBOT_VIEW_DISTANCE || '6', 10);
 const TP_DWELL_MS = parseInt(process.env.CAMBOT_TP_DWELL_MS || '20000', 10);
 const TP_POLL_MS = parseInt(process.env.CAMBOT_TP_POLL_MS || '5000', 10);
-const TP_TIMEOUT_MS = parseInt(process.env.CAMBOT_TP_TIMEOUT_MS || '2000', 10);
-const TP_MIN_DELTA = parseFloat(process.env.CAMBOT_TP_MIN_DELTA || '3');
+const TP_TIMEOUT_MS = parseInt(process.env.CAMBOT_TP_TIMEOUT_MS || '4000', 10);
+const TP_MIN_DELTA = parseFloat(process.env.CAMBOT_TP_MIN_DELTA || '0.5');
 let VERBOSE_ENABLED = false; // toggled via chat: "cambot verbose [on|off]"
 // Use the official launcher profiles folder so the bot shares the same auth
 const PROFILES_DIR = (function () {
@@ -188,6 +188,20 @@ function startTeleportFilmingLoop(bot) {
 
       const name = queue[idx];
       log.info('tp.attempt', { target: name });
+      // If we're already filming this target, skip issuing /tp and just continue the shot
+      if (currentTargetName && name === currentTargetName) {
+        log.info('tp.skip_same_target', { target: name, dwellMs: TP_DWELL_MS });
+        try { cameraManager.lockTargetToPlayer(name); } catch (_) {}
+        const dwellSeconds = Math.round(TP_DWELL_MS / 1000);
+        const mode = cameraManager && cameraManager.config ? cameraManager.config.viewModeMix : 'look_at';
+        sayCompact(`Switched to ${name}. Filming ${dwellSeconds}s. Mode=${mode}.`);
+        timer = setTimeout(() => {
+          idx = (idx + 1) % Math.max(1, queue.length);
+          inStep = false;
+          step();
+        }, TP_DWELL_MS);
+        return;
+      }
       const { ok, reason } = await tryTeleportTo(bot, name);
       if (!ok) {
         log.warn('tp.failed', { target: name, reason });
