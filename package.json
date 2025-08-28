@@ -12,6 +12,7 @@
     "verify": "bash scripts/verify.sh",
     "update": "git pull --ff-only && npm ci && npm run verify",
     "test": "node runTests.js",
+    "analyze:logs": "node scripts/analyze-logs.js --last",
     "auth:prompt": "node scripts/auth-prompt.js",
     "auth:reset": "node scripts/auth-reset.js"
   },
