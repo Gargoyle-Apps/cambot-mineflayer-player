@@ -49,6 +49,7 @@ const GOAL_LOG_THROTTLE_MS = parseInt(process.env.CAMBOT_GOAL_LOG_THROTTLE_MS ||
 let lockedPlayerName = null; // When set, we only track this player's entity
 let lastTargetPos = null;
 let lastGoalSetTs = 0;
+let teleportSessionContext = null; // { tpTarget: string, tpOrigin: {x,y,z} }
 
 function start(bot) {
   if (botRef) stop();
@@ -207,7 +208,12 @@ function performModeMovement(mode) {
       lastGoalPos = goalPos.clone();
       lastGoalSetTs = now;
       if (now - lastGoalLogTs >= GOAL_LOG_THROTTLE_MS) {
-        log.info('manager.goal_updated', { goal: { x: goalPos.x, y: goalPos.y, z: goalPos.z }, mode });
+        const logData = { goal: { x: goalPos.x, y: goalPos.y, z: goalPos.z }, mode };
+        if (teleportSessionContext) {
+          logData.tpTarget = teleportSessionContext.tpTarget;
+          logData.tpOrigin = teleportSessionContext.tpOrigin;
+        }
+        log.info('manager.goal_updated', logData);
         lastGoalLogTs = now;
       }
     }
@@ -245,5 +251,19 @@ safeUpdateMovement = function () {
 };
 
 module.exports = { start, stop, updateConfig, config, lockTargetToPlayer, clearTargetLock };
+
+// Session context helpers for teleport cycles
+function setTeleportSessionContext(ctx) {
+  teleportSessionContext = ctx || null;
+  log.debug('manager.tp_session_set', teleportSessionContext ? { tpTarget: teleportSessionContext.tpTarget } : {});
+}
+
+function clearTeleportSessionContext() {
+  teleportSessionContext = null;
+  log.debug('manager.tp_session_cleared');
+}
+
+module.exports.setTeleportSessionContext = setTeleportSessionContext;
+module.exports.clearTeleportSessionContext = clearTeleportSessionContext;
 
 

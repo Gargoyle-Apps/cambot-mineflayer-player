@@ -213,7 +213,10 @@ function startTeleportFilmingLoop(bot) {
         return;
       }
 
-      log.info('tp.success', { target: name, dwellMs: TP_DWELL_MS });
+      // Record post-teleport origin and start session context
+      const origin = bot.entity && bot.entity.position ? { x: bot.entity.position.x, y: bot.entity.position.y, z: bot.entity.position.z } : null;
+      log.info('tp.success', { target: name, dwellMs: TP_DWELL_MS, origin });
+      try { cameraManager.setTeleportSessionContext({ tpTarget: name, tpOrigin: origin }); } catch (_) {}
       currentTargetName = name;
       try { cameraManager.lockTargetToPlayer(name); } catch (_) {}
       const dwellSeconds = Math.round(TP_DWELL_MS / 1000);
@@ -227,6 +230,7 @@ function startTeleportFilmingLoop(bot) {
       timer = setTimeout(() => {
         idx = (idx + 1) % Math.max(1, queue.length);
         currentTargetName = null;
+        try { cameraManager.clearTeleportSessionContext(); } catch (_) {}
         inStep = false;
         step();
       }, TP_DWELL_MS);
